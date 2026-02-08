@@ -1,0 +1,7 @@
+streamlit
+streamlit-authenticator
+requests
+pandas
+plotly
+fpdf
+google-generativeai
