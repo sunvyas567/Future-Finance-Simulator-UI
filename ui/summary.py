@@ -204,7 +204,7 @@ def render_summary(projections, user_data, user, base_context):
         income_expense_png = fig_ie.to_image(format="png", scale=2)
         corpus_png = fig_corpus.to_image(format="png", scale=2)
     except Exception as e:
-        st.warning("Chart images unavailable (kaleido not installed). PDF will be generated without charts.")
+        st.warning("Chart images unavailable (kaleido not installed).")
 
     if user.get("is_premium"):
         if st.button("📥 Download Detailed PDF"):
