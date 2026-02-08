@@ -196,8 +196,15 @@ def render_summary(projections, user_data, user, base_context):
     # PDF Export
     # -------------------------------------------------
     
-    income_expense_png = fig_ie.to_image(format="png", scale=2)
-    corpus_png = fig_corpus.to_image(format="png", scale=2)
+    # Try to generate chart images for PDF; gracefully skip if kaleido unavailable
+    income_expense_png = None
+    corpus_png = None
+    
+    try:
+        income_expense_png = fig_ie.to_image(format="png", scale=2)
+        corpus_png = fig_corpus.to_image(format="png", scale=2)
+    except Exception as e:
+        st.warning("Chart images unavailable (kaleido not installed). PDF will be generated without charts.")
 
     if user.get("is_premium"):
         if st.button("📥 Download Detailed PDF"):
