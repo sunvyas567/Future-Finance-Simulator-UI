@@ -3,5 +3,6 @@ streamlit-authenticator
 requests
 pandas
 plotly
+kaleido
 fpdf
 google-generativeai
