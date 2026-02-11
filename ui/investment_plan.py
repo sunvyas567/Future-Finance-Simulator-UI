@@ -6,6 +6,8 @@ import plotly.express as px
 import copy
 
 from services.api_client import calculate_projections
+from ui import scenario
+from ui import scenario
 from ui.currency import get_currency
 
 import copy
@@ -212,7 +214,10 @@ def _allocation_fields(country):
 # =========================================================
 
 def render_investment_plan(user_data: dict, user: dict):
-    st.header("📊 Income & Investment Strategy")
+    #st.header("📊 Income & Investment Strategy")
+    st.header("📊 Income & Investment Strategy - How Your Money Works for You")
+    st.caption("See how your savings generate income and support your lifestyle.")
+
 
     is_guest = user.get("is_guest", False)
     is_premium = user.get("is_premium", False)
@@ -264,7 +269,10 @@ def render_investment_plan(user_data: dict, user: dict):
     # =========================================================
     # SCENARIO SELECTOR
     # =========================================================
-    st.subheader("🧪 Scenario")
+    st.subheader("🧪 Your Future Plans (Scenarios)")
+   # st.subheader("🧪 Your Future Plans")
+    st.caption("Compare different approaches to managing your retirement income.")
+
 
     scenario_names = list(plan["scenarios"].keys())
 
@@ -306,7 +314,7 @@ def render_investment_plan(user_data: dict, user: dict):
     # =========================================================
     # SECTION A — STARTING CORPUS (READ ONLY)
     # =========================================================
-    st.subheader("A️⃣ Starting Corpus")
+    st.subheader("💰  Your Current Savings - Starting Corpus")
 
     corpus = user_data.get("initial_corpus", {})
     #print("CORPUS", corpus)
@@ -330,7 +338,10 @@ def render_investment_plan(user_data: dict, user: dict):
     # =========================================================
     # SECTION B — ALLOCATION + RETURNS
     # =========================================================
-    st.subheader("B️⃣ Allocation & Expected Returns")
+    #st.subheader("B️⃣ Allocation & Expected Returns")
+    st.subheader("💰  Where Your Money Is Invested - Allocation & Expected Returns")
+    st.caption("How your savings are allocated and the income they may generate.")
+
 
     rows = []
     alloc_total = 0.0
@@ -344,10 +355,10 @@ def render_investment_plan(user_data: dict, user: dict):
 
         rows.append({
             "Instrument": label,
-            "Allocation %": alloc,
-            "Rate %": rate,
+            "How much goes where - Allocation %": alloc,
+            "Expected Yearl Return - Rate %": rate,
             "Allocated Amount": allocated_amt,
-            "Annual Income (est.)": annual_income,
+            "Estimated Yearly Income": annual_income,
         })
 
         alloc_total += alloc
@@ -383,32 +394,201 @@ def render_investment_plan(user_data: dict, user: dict):
     st.divider()
 
     # =========================================================
-    # SECTION C — EXTERNAL INCOME & WITHDRAWAL
+    # SECTION C — EXTERNAL INCOME & WITHDRAWAL (REDESIGNED)
     # =========================================================
-    st.subheader("C️⃣ External Income & Withdrawal")
 
-    for k in scenario["income_sources"]:
-        scenario["income_sources"][k] = st.number_input(
-            k.replace("_", " ").title(),
+    # Income frequency configuration
+    INCOME_FREQUENCY = {
+        "rental": "monthly",
+        "pension": "monthly",
+        "annuity": "monthly",
+        "social_security": "monthly",
+        "dividends": "yearly",
+        "other": "yearly",
+    }
+
+    # =========================================================
+    # SECTION C — EXTERNAL INCOME & WITHDRAWAL (REDESIGNED)
+    # =========================================================
+    st.subheader("💰 Other Income & Withdrawal")
+
+    # -----------------------------
+    # External Income Sources
+    # -----------------------------
+    st.markdown("### 💸 Other Income Sources")
+
+    INCOME_ICONS = {
+        "rental": "🏠",
+        "pension": "🧓",
+        "annuity": "📜",
+        "dividends": "📈",
+        "social_security": "🏛️",
+        "other": "➕",
+    }
+
+    INCOME_FREQUENCY = {
+        "rental": "monthly",
+        "pension": "monthly",
+        "annuity": "monthly",
+        "social_security": "monthly",
+        "dividends": "yearly",
+        "other": "yearly",
+    }
+
+    income_cols = st.columns(2)
+
+    for idx, (key, value) in enumerate(scenario["income_sources"].items()):
+        col = income_cols[idx % 2]
+
+        label = key.replace("_", " ").title()
+        icon = INCOME_ICONS.get(key, "💰")
+        frequency = INCOME_FREQUENCY.get(key, "monthly")
+
+        include_key = f"income_{active}_{key}_include"
+        value_key = f"income_{active}_{key}_value"
+
+        if include_key not in st.session_state:
+            st.session_state[include_key] = value > 0
+
+        with col:
+            with st.container(border=True):
+
+                st.markdown(f"### {icon} {label}")
+
+                include = st.checkbox(
+                    "Include",
+                    key=include_key,
+                    disabled=not editable,
+                )
+
+                # 🔹 Label shows Monthly or Yearly
+                label_text = (
+                    f"Monthly Amount ({currency})"
+                    if frequency == "monthly"
+                    else f"Yearly Amount ({currency})"
+                )
+
+                amount = st.number_input(
+                    label_text,
+                    min_value=0.0,
+                    step=1000.0,
+                    value=float(value),
+                    disabled=not include or not editable,
+                    key=value_key,
+                )
+
+                # 🔹 Show annual equivalent for monthly items
+                if include:
+                    if frequency == "monthly":
+                        annual_value = amount * 12
+                        st.caption(f"💡 Annual Equivalent: {currency}{annual_value:,.0f}")
+                    else:
+                        st.caption(f"💡 Annual Income: {currency}{amount:,.0f}")
+
+                # 🔹 Store consistently (store raw user input)
+                scenario["income_sources"][key] = amount if include else 0.0
+        
+    #st.subheader("💰  Other Income & Withdrawal")
+
+    # -----------------------------
+    # External Income Sources
+    # -----------------------------
+    #st.markdown("### 💸 Other Income Sources")
+
+    #INCOME_ICONS = {
+    #    "rental": "🏠",
+    #    "pension": "🧓",
+    ##    "annuity": "📜",
+    #    "dividends": "📈",
+    #    "social_security": "🏛️",
+    #    "other": "➕",
+    #}
+
+    #income_cols = st.columns(2)
+
+    #for idx, (key, value) in enumerate(scenario["income_sources"].items()):
+    #    col = income_cols[idx % 2]
+
+    #    label = key.replace("_", " ").title()
+    #    icon = INCOME_ICONS.get(key, "💰")
+
+    #    include_key = f"income_{active}_{key}_include"
+    #    value_key = f"income_{active}_{key}_value"
+
+    #    if include_key not in st.session_state:
+    #        st.session_state[include_key] = value > 0
+
+    #    with col:
+    #        with st.container(border=True):
+    #            st.markdown(f"### {icon} {label}")
+
+    #            include = st.checkbox(
+    #                "Include",
+    #                key=include_key,
+    #                disabled=not editable,
+    #            )
+
+    #            amount = st.number_input(
+    #                f"Amount ({currency})",
+    #                min_value=0.0,
+    #                step=1000.0,
+    #                value=float(value),
+    #                disabled=not include or not editable,
+    #                key=value_key,
+    #            )
+
+    #            scenario["income_sources"][key] = amount if include else 0.0
+
+    # -----------------------------
+    # SWP Withdrawal
+    # -----------------------------
+    st.divider()
+    st.markdown("### 🔄 Systematic Withdrawal (SWP)")
+
+    with st.container(border=True):
+        st.markdown("### 💳 Monthly Withdrawal")
+
+        scenario["withdrawal"]["monthly"] = st.number_input(
+            f"Withdrawal Amount ({currency} / month)",
             min_value=0.0,
-            value=float(scenario["income_sources"][k]),
+            step=1000.0,
+            value=float(scenario["withdrawal"]["monthly"]),
             disabled=not editable,
+            key=f"withdrawal_{active}",
         )
 
-    scenario["withdrawal"]["monthly"] = st.number_input(
-        "Monthly Withdrawal (SWP)",
-        min_value=0.0,
-        step=1000.0,
-        value=float(scenario["withdrawal"]["monthly"]),
-        disabled=not editable,
-    )
+        st.caption(
+            f"📅 Yearly: {currency}{scenario['withdrawal']['monthly'] * 12:,.0f}"
+        )
+
+    # =========================================================
+    # SECTION C — EXTERNAL INCOME & WITHDRAWAL
+    # =========================================================
+    #st.subheader("C️⃣ External Income & Withdrawal")
+
+    #for k in scenario["income_sources"]:
+    #    scenario["income_sources"][k] = st.number_input(
+    #        k.replace("_", " ").title(),
+    #        min_value=0.0,
+    #        value=float(scenario["income_sources"][k]),
+    #        disabled=not editable,
+    #    )
+
+    #scenario["withdrawal"]["monthly"] = st.number_input(
+    #    "Monthly Withdrawal (SWP)",
+    #    min_value=0.0,
+    #    step=1000.0,
+    #    value=float(scenario["withdrawal"]["monthly"]),
+    #    disabled=not editable,
+    #)
 
     st.divider()
 
     # =========================================================
     # SECTION D — PROJECTIONS (ACTIVE SCENARIO)
     # =========================================================
-    st.subheader("D️⃣ Projections")
+    st.subheader("💰  Projections")
+    st.metric("Number of Planning Years - ",user_data["GLProjectionYears"]["input"])
     #print("Calculing prrojections")
     result = calculate_projections(user_data, user)
 
@@ -421,6 +601,53 @@ def render_investment_plan(user_data: dict, user: dict):
 
     df = pd.DataFrame(projections)
     st.dataframe(df, use_container_width=True)
+
+    # =========================================================
+    # SECTION — Instrument Income Over Time
+    # =========================================================
+    st.subheader("📈 Income Contribution by Instrument")
+
+    if not projections:
+        st.info("Complete inputs to view projections.")
+    else:
+        df = pd.DataFrame(projections)
+
+        # Detect income columns dynamically
+        income_cols = [
+            c for c in df.columns
+            if c.endswith("Income") and c != "TotalIncome"
+        ]
+
+        if income_cols:
+            fig_income_sources = px.line(
+                df,
+                x="Year",
+                y=income_cols,
+                markers=True,
+                title="Annual Income by Instrument",
+                labels={"value": "Annual Income", "variable": "Instrument"},
+            )
+
+            fig_income_sources.update_layout(
+                template="plotly_white",
+                legend_title="Income Source",
+            )
+
+            st.plotly_chart(fig_income_sources, use_container_width=True)
+
+            # Optional stacked version (uncomment if desired)
+            """
+            fig_stacked = px.area(
+                df,
+                x="Year",
+                y=income_cols,
+                title="Stacked Income Sources Over Time",
+            )
+            fig_stacked.update_layout(template="plotly_white")
+            st.plotly_chart(fig_stacked, use_container_width=True)
+            """
+        else:
+            st.info("No instrument-level income data available.")
 
     # ---- Ending Corpus chart ----
     if "EndingCorpus" in df.columns:
@@ -455,7 +682,7 @@ def render_investment_plan(user_data: dict, user: dict):
     # =========================================================
     # SECTION E — SCENARIO COMPARISON (NO RECOMPUTE)
     # =========================================================
-    st.subheader("E️⃣ Scenario Comparison")
+    st.subheader("💰  Scenario Comparison")
 
     results_by_scenario = result.get("results_by_scenario", {})
 

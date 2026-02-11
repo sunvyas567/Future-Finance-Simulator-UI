@@ -57,7 +57,7 @@ def render_onetime_expenses(config, user_data, user):
     currency = get_currency(user_data)
     country = user_data.get("country", "IN")
 
-    st.subheader("🏷 One-Time Expenses")
+    st.subheader("🏷 Big One-Time Costs")
 
     # -------------------------------------------------
     # Ensure country-scoped storage
@@ -69,28 +69,79 @@ def render_onetime_expenses(config, user_data, user):
     #print("One-time expenses UI: - 1", expenses)
 
     # -------------------------------------------------
-    # Input fields only
+    # Input fields (REDESIGNED CARD UI)
     # -------------------------------------------------
     input_fields = [
         f for f in config
         if "Field Default Value" in f and "Field Description" in f
     ]
 
-    for field in input_fields:
+    cols = st.columns(2)
+
+    for idx, field in enumerate(input_fields):
+        col = cols[idx % 2]
+
         key = field["Field Name"]
         label = field["Field Description"]
-        default = field.get("Field Default Value", 0)
+        default = float(field.get("Field Default Value", 0))
+        icon = FIELD_ICONS.get(key, "💸")
 
-        value = expenses.get(key, {}).get("input", default)
+        stored_value = float(expenses.get(key, {}).get("input", default))
 
-        value = st.number_input(
-            f"{FIELD_ICONS.get(key, '💸')} {label} ({currency})",
-            min_value=0.0,
-            value=float(value),
-            step=1000.0,
-            disabled=is_guest or not is_premium,
-            key=f"onetime_{country}_{key}",
-        )
+        include_key = f"onetime_{country}_{key}_include"
+        value_key = f"onetime_{country}_{key}_value"
+
+        # Default include = True if value > 0
+        if include_key not in st.session_state:
+            st.session_state[include_key] = stored_value > 0
+
+        with col:
+            with st.container(border=True):
+                st.markdown(f"### {icon} {label}")
+
+                include = st.checkbox(
+                    "Include",
+                    key=include_key,
+                    disabled=is_guest or not is_premium
+                )
+
+                value = st.number_input(
+                    f"Amount ({currency})",
+                    min_value=0.0,
+                    value=stored_value,
+                    step=1000.0,
+                    disabled=not include or is_guest or not is_premium,
+                    key=value_key
+                )
+
+                if not is_guest:
+                    expenses[key] = {
+                        "input": value if include else 0.0
+                    }
+
+    # -------------------------------------------------
+    # Input fields only
+    # -------------------------------------------------
+    #input_fields = [
+    #    f for f in config
+    #    if "Field Default Value" in f and "Field Description" in f
+    #]
+
+    #for field in input_fields:
+    #    key = field["Field Name"]
+    #    label = field["Field Description"]
+    #    default = field.get("Field Default Value", 0)
+
+    #    value = expenses.get(key, {}).get("input", default)
+
+    #    value = st.number_input(
+    #        f"{FIELD_ICONS.get(key, '💸')} {label} ({currency})",
+    #        min_value=0.0,
+    #        value=float(value),
+    #        step=1000.0,
+    #        disabled=is_guest or not is_premium,
+    #        key=f"onetime_{country}_{key}",
+    #    )
 
         expenses[key] = {"input": value}
 

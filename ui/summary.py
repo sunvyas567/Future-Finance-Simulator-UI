@@ -21,12 +21,72 @@ def safe_get(d: dict, path: list, default=0):
             return default
     return cur
 
+def compute_retirement_score(projection_df, base_context):
+    if projection_df.empty:
+        return 0, {}
+
+    years = len(projection_df)
+    last = projection_df.iloc[-1]
+    first = projection_df.iloc[0]
+
+    # 1️⃣ Corpus Sustainability (40 pts)
+    if last["EndingCorpus"] > 0:
+        corpus_score = 40
+    elif last["EndingCorpus"] > -0.2 * base_context["initial_corpus"]["total"]:
+        corpus_score = 25
+    else:
+        corpus_score = 10
+
+    # 2️⃣ Income Coverage (25 pts)
+    if first["TotalIncome"] >= first["TotalExpenses"]:
+        coverage_score = 25
+    else:
+        ratio = first["TotalIncome"] / max(first["TotalExpenses"], 1)
+        coverage_score = max(5, 25 * ratio)
+
+    # 3️⃣ Withdrawal Safety (20 pts)
+    withdrawal_rate = (
+        first["TotalWithdrawal"] / base_context["initial_corpus"]["total"]
+        if base_context["initial_corpus"]["total"] > 0 else 0
+    )
+
+    if withdrawal_rate <= 0.04:
+        withdrawal_score = 20
+    elif withdrawal_rate <= 0.06:
+        withdrawal_score = 15
+    else:
+        withdrawal_score = 5
+
+    # 4️⃣ Tax Efficiency (15 pts)
+    tax_ratio = first["TotalTax"] / max(first["TotalIncome"], 1)
+    if tax_ratio <= 0.15:
+        tax_score = 15
+    elif tax_ratio <= 0.25:
+        tax_score = 10
+    else:
+        tax_score = 5
+
+    total_score = round(
+        corpus_score + coverage_score + withdrawal_score + tax_score
+    )
+
+    breakdown = {
+        "Corpus Sustainability": corpus_score,
+        "Income Coverage": coverage_score,
+        "Withdrawal Safety": withdrawal_score,
+        "Tax Efficiency": tax_score,
+    }
+
+    return total_score, breakdown
 
 # -------------------------------------------------
 # MAIN SUMMARY
 # -------------------------------------------------
 def render_summary(projections, user_data, user, base_context):
-    st.header("📊 Retirement Outlook")
+    st.header("📊 Your Retirement Outlook")
+    #st.header("📄 Your Retirement Outlook")
+    st.caption("A clear picture of your future income, expenses, and savings.")
+
 
     # -------------------------------------------------
     # Safety
@@ -48,26 +108,62 @@ def render_summary(projections, user_data, user, base_context):
     df = pd.DataFrame(projections)
     year1 = df.iloc[0]
 
+    score, breakdown = compute_retirement_score(df, base_context)
+
+    st.markdown("## 🏆 Retirement Readiness Score")
+
+    col1, col2 = st.columns([1,2])
+
+    with col1:
+        st.metric("Overall Score", f"{score} / 100")
+
+    with col2:
+        st.progress(score / 100)
+
+    if score >= 80:
+        st.success("You are on track for a confident retirement 🎯")
+    elif score >= 60:
+        st.warning("You are moderately prepared. Some adjustments recommended.")
+    else:
+        st.error("Retirement plan needs strengthening.")
+
+    st.markdown("### 📊 Score Breakdown")
+
+    breakdown_df = pd.DataFrame({
+        "Category": breakdown.keys(),
+        "Score": breakdown.values()
+    })
+
+    fig_score = px.bar(
+        breakdown_df,
+        x="Category",
+        y="Score",
+        color="Score",
+        color_continuous_scale="Blues"
+    )
+
+    st.plotly_chart(fig_score, use_container_width=True)
+
     # -------------------------------------------------
     # Key Numbers (Top)
     # -------------------------------------------------
     starting_corpus = safe_get(base_context, ["initial_corpus", "total"], 0)
     one_time_total = safe_get(base_context, ["one_time", "total"], 0)
 
-    st.subheader("🔑 Key Numbers (Year 1)")
+    st.subheader("🔑 Your Retirement Snapshot (Year 1)")
 
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Starting Corpus", f"{currency}{starting_corpus:,.0f}")
-    k2.metric("Annual Mandatory", f"{currency}{year1['AnnualMustExpenses']:,.0f}")
-    k3.metric("Annual Optional", f"{currency}{year1['AnnualOptionalExpenses']:,.0f}")
-    k4.metric("Net Income (Post-Tax)", f"{currency}{year1['NetIncomeAfterTax']:,.0f}")
+    k2.metric("Yearly Essential Living Costs", f"{currency}{year1['AnnualMustExpenses']:,.0f}")
+    k3.metric("Yearly Leisure Costs", f"{currency}{year1['AnnualOptionalExpenses']:,.0f}")
+    k4.metric("Take-home Income (Post-Tax)", f"{currency}{year1['NetIncomeAfterTax']:,.0f}")
 
     st.divider()
 
     # -------------------------------------------------
     # Income vs Expenses
     # -------------------------------------------------
-    st.subheader("📈 Income vs Expenses")
+    st.subheader("📈 Will My Income Cover My Expenses? - Income vs Expenses")
 
     fig_ie = px.line(
         df,
@@ -81,7 +177,7 @@ def render_summary(projections, user_data, user, base_context):
     # -------------------------------------------------
     # Corpus Growth
     # -------------------------------------------------
-    st.subheader("💰 Corpus Trajectory")
+    st.subheader("💰 How Your Savings Change Over Time - Corpus Trajectory")
 
     fig_corpus = px.area(
         df,
@@ -207,7 +303,7 @@ def render_summary(projections, user_data, user, base_context):
         st.warning("Chart images unavailable (kaleido not installed).")
 
     if user.get("is_premium"):
-        if st.button("📥 Download Detailed PDF"):
+        if st.button("📥 Download Detailed Retirement Report (PDF"):
             pdf_bytes = generate_financial_summary_pdf(
                 username=user["username"],
                 base_context=base_context,
@@ -222,7 +318,7 @@ def render_summary(projections, user_data, user, base_context):
                 pdf_bytes = bytes(pdf_bytes)
 
             st.download_button(
-                "Download PDF",
+                "Download Report PDF",
                 pdf_bytes,
                 file_name=f"{user['username']}_{scenario_name}_summary.pdf",
                 mime="application/pdf",

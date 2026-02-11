@@ -443,11 +443,11 @@ def run_simulator(is_guest: bool = False):
     # 5. NAVIGATION
     # ==========================================================
     pages = [
-        "About App",
-        "Capture Basic Data",
-        "Expenses",
-        "Investment Plan",
-        "Summary",
+        "Welcome",
+        "Your Profile",
+        "Your Expenses",
+        "Income & Investment Plan",
+        "Retirement Outlook Report",
     ]
 
     if not user["is_guest"] and not user["is_premium"]:
@@ -474,7 +474,7 @@ def run_simulator(is_guest: bool = False):
     projections = None
     base_context = None
 
-    if page == "Summary":
+    if page == "Retirement Outlook Report":
         try:
             from ui.investment_plan import ensure_scenarios
             # -------------------------------------------------
@@ -521,23 +521,47 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     # 8. PAGE RENDERING (PURE UI)
     # ==========================================================
-    if page == "About App":
-        st.header("About the App")
+    if page == "Welcome":
+        #st.header("About the App")
+        st.title("Plan Your Retirement With Confidence")
+        st.subheader("A simple, powerful tool to understand your future income, expenses, and savings.")
+        st.markdown(
+        """
+        Retirement planning doesn’t have to be confusing.
+
+        This planner helps you:
+        - 📊 Estimate how long your savings will last  
+        - 💸 Understand your yearly expenses  
+        - 📈 Compare different investment strategies  
+        - 🧾 See the impact of taxes  
+        - 🔍 Visualize your future clearly  
+
+        In just a few minutes, you can see whether your current savings and income plan will support the lifestyle you want.
+        """
+        )
+        
+        st.info(
+            "Designed for everyday individuals — no financial background required."
+        )
+        st.success(
+            "👉 Start by entering your details in 'Your Profile' to see your personalized retirement outlook."
+        )
+
         st.markdown(config["about"])
 
-    elif page == "Capture Basic Data":
+    elif page == "Your Profile":
         from ui.base_data import render_base_data
         render_base_data(config["base_data"], user_data, user)
 
-    elif page == "Expenses":
+    elif page == "Your Expenses":
         from ui.expenses import render_expenses
         render_expenses(config=config, user_data=user_data, user=user)
 
-    elif page == "Investment Plan":
+    elif page == "Income & Investment Plan":
         from ui.investment_plan import render_investment_plan
         render_investment_plan(user_data=user_data, user=user)
 
-    elif page == "Summary":
+    elif page == "Retirement Outlook Report":
         from ui.summary import render_summary
         if not projections or not base_context:
             st.warning("Please complete inputs to view summary.")

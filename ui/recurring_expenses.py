@@ -40,7 +40,7 @@ def render_recurring_expenses(config, user_data, user):
     currency = get_currency(user_data)
     country = user_data.get("country", "IN")
 
-    st.subheader("🔁 Recurring Monthly Expenses")
+    st.subheader("🔁 Monthly Living Expenses")
 
     # --------------------------------------------------
     # Storage (country-scoped)
@@ -85,33 +85,80 @@ def render_recurring_expenses(config, user_data, user):
         st.caption("Templates are indicative.")
 
     st.divider()
+    
+    # --------------------------------------------------
+    # Render fields (REDESIGNED CARD UI)
+    # --------------------------------------------------
+    cols = st.columns(2)
+
+    for idx, field in enumerate(input_fields):
+        col = cols[idx % 2]
+
+        name = field["Field Name"]
+        label = field["Field Description"]
+        default = float(field.get("Field Default Value", 0))
+
+        stored_value = float(expenses.get(name, {}).get("monthly", default))
+
+        include_key = f"rec_{country}_{name}_include"
+        value_key = f"rec_{country}_{name}_value"
+
+        # Default include = True if value > 0
+        if include_key not in st.session_state:
+            st.session_state[include_key] = stored_value > 0
+
+        with col:
+            with st.container(border=True):
+                st.markdown(f"### 🔁 {label}")
+
+                include = st.checkbox(
+                    "Include",
+                    key=include_key,
+                    disabled=is_guest or not is_premium
+                )
+
+                value = st.number_input(
+                    f"Monthly Amount ({currency})",
+                    min_value=0.0,
+                    value=stored_value,
+                    step=500.0,
+                    disabled=not include or is_guest or not is_premium,
+                    key=value_key,
+                )
+
+                yearly = value * 12 if include else 0.0
+                st.caption(f"📅 Yearly: {currency}{yearly:,.0f}")
+
+                expenses[name] = {
+                    "monthly": value if include else 0.0
+                }
 
     # --------------------------------------------------
     # Render fields
     # --------------------------------------------------
-    for field in input_fields:
-        name = field["Field Name"]
-        label = field["Field Description"]
-        default = field.get("Field Default Value", 0)
+    #for field in input_fields:
+    #    name = field["Field Name"]
+    #    label = field["Field Description"]
+    #    default = field.get("Field Default Value", 0)
 
-        value = expenses.get(name, {}).get("monthly", default)
+    #    value = expenses.get(name, {}).get("monthly", default)
 
-        cols = st.columns([2, 1])
+    #    cols = st.columns([2, 1])
 
-        with cols[0]:
-            value = st.number_input(
-                f"{label} ({currency} / month)",
-                min_value=0.0,
-                value=float(value),
-                step=500.0,
-                disabled=is_guest or not is_premium,
-                key=f"rec_{country}_{name} ",
-            )
+    #    with cols[0]:
+    #        value = st.number_input(
+    #            f"{label} ({currency} / month)",
+    #            min_value=0.0,
+    #            value=float(value),
+    #            step=500.0,
+    #            disabled=is_guest or not is_premium,
+    #            key=f"rec_{country}_{name} ",
+    #        )
 
-        with cols[1]:
-            st.metric("Yearly", f"{currency}{value * 12:,.0f}")
+    #    with cols[1]:
+    #        st.metric("Yearly", f"{currency}{value * 12:,.0f}")
 
-        expenses[name] = {"monthly": value}
+    #    expenses[name] = {"monthly": value}
 
     # --------------------------------------------------
     # Compute totals (backend truth)

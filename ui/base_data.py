@@ -82,7 +82,9 @@ def render_base_data(config, user_data: dict, user: dict):
 
     currency = get_currency(user_data)
 
-    st.header("📋 Base Information")
+    #st.header("📋 Base Information")
+    st.header("👤 About You & Your Retirement Planning")
+    st.caption("Tell us a little about yourself so that your retirement plan can be personalized to your context and needs.")
     st.caption("These details remain constant across all scenarios.")
 
     # -----------------------------------------------------
@@ -95,7 +97,7 @@ def render_base_data(config, user_data: dict, user: dict):
     user_data.setdefault("GLProjectionYears", {"input": 25})
 
     with col1:
-        st.subheader("👤 Personal Details")
+        st.subheader("👤 Your Profile")
 
         age = st.number_input(
             "Current Age",
@@ -117,7 +119,7 @@ def render_base_data(config, user_data: dict, user: dict):
             user_data["GLGender"]["input"] = gender
 
     with col2:
-        st.subheader("🗓 Projection Horizon")
+        st.subheader("🗓 How long you want to plan for?")
 
         max_years = 60 if is_premium else 2
 
@@ -127,7 +129,7 @@ def render_base_data(config, user_data: dict, user: dict):
         safe_years = min(stored_years, max_years)
 
         years = st.number_input(
-            "Projection Years",
+            "Planning Duration (Years)",
             min_value=1,
             max_value=max_years,
             value=safe_years,
@@ -147,72 +149,158 @@ def render_base_data(config, user_data: dict, user: dict):
             user_data["GLProjectionYears"]["input"] = years
 
         if not is_guest and not is_premium:
-            st.info("Free users are limited to 2 years.")
+            st.info("Free users are limited to 2 years. projection years can be extended with a premium subscription.")
 
     st.divider()
 
     # -----------------------------------------------------
-    # Initial Corpus (ONLY source of truth)
+    # Initial Corpus (REDESIGNED UI)
     # -----------------------------------------------------
-    st.subheader("💰 Initial Retirement Corpus")
-    st.caption("Your current retirement savings")
+    #st.subheader("💰 Initial Retirement Corpus")
+    #st.caption("Your current retirement savings (include/exclude as needed)")
+    st.subheader("💰 Your Current Savings (Starting Corpus)")
+    st.caption("Savings and investments you already have for retirement. (include/exclude as needed)")
 
-    def corpus_field_old(key: str, label: str):
-        value = user_data["initial_corpus"].get(key, 0.0)
 
-        new_val = st.number_input(
-            f"{label} ({currency})",
-            min_value=0.0,
-            value=float(value),
-            disabled=is_guest or not is_premium,
-            key=f"corpus_{key}",
-        )
+    def render_corpus_cards(corpus_config: list):
+        total = 0
+        cols = st.columns(2)
 
-        user_data["initial_corpus"][key] = new_val
-    def corpus_field(key: str, label: str):
-        value = user_data["initial_corpus"].get(key, 0.0)
+        for idx, item in enumerate(corpus_config):
+            col = cols[idx % 2]
+            key = item["key"]
 
-        new_val = st.number_input(
-            f"{label} ({currency})",
-            min_value=0.0,
-            value=float(value),
-            disabled=is_guest or not is_premium,
-            key=f"corpus_{key}",
-        )
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"### {item['icon']} {item['label']}")
 
-        if not is_guest:
-            user_data["initial_corpus"][key] = new_val
-        else :
-            user_data["initial_corpus"][key] = value  # preserve existing value for guest
+                    include_key = f"corpus_{key}_include"
+                    value_key = f"corpus_{key}_value"
 
-    # 🇮🇳 INDIA
+                    # Initialize include flag (default = True if value > 0)
+                    if include_key not in st.session_state:
+                        st.session_state[include_key] = user_data["initial_corpus"].get(key, 0) > 0
+
+                    include = st.checkbox(
+                        "Include",
+                        key=include_key,
+                        disabled=is_guest or not is_premium
+                    )
+
+                    current_value = float(user_data["initial_corpus"].get(key, 0))
+
+                    value = st.number_input(
+                        f"Amount ({currency})",
+                        min_value=0.0,
+                        value=current_value,
+                        disabled=not include or is_guest or not is_premium,
+                        key=value_key
+                    )
+
+                    if not is_guest:
+                        user_data["initial_corpus"][key] = value if include else 0.0
+
+                    if include:
+                        total += value
+
+        return total
+    # Country-specific corpus configuration
     if user_data["country"] == "IN":
-        corpus_field("PF", "Provident Fund (PF)")
-        corpus_field("PPF", "Public Provident Fund (PPF)")
-        corpus_field("NPS", "National Pension Scheme (NPS)")
-        corpus_field("SUPER", "Superannuation")
-        corpus_field("OTHER", "Other Corpus")
+        corpus_config = [
+            {"key": "PF", "label": "Provident Fund (PF)", "icon": "🏦"},
+            {"key": "PPF", "label": "Public Provident Fund (PPF)", "icon": "📘"},
+            {"key": "NPS", "label": "National Pension Scheme (NPS)", "icon": "📊"},
+            {"key": "SUPER", "label": "Superannuation", "icon": "🧾"},
+            {"key": "OTHER", "label": "Other Corpus", "icon": "➕"},
+        ]
 
-    # 🇺🇸 US
     elif user_data["country"] == "US":
-        corpus_field("401K", "401(k)")
-        corpus_field("IRA", "IRA")
-        corpus_field("BROKERAGE", "Brokerage Account")
-        corpus_field("OTHER", "Other Corpus")
+        corpus_config = [
+            {"key": "401K", "label": "401(k)", "icon": "🏦"},
+            {"key": "IRA", "label": "IRA", "icon": "📘"},
+            {"key": "BROKERAGE", "label": "Brokerage Account", "icon": "📈"},
+            {"key": "OTHER", "label": "Other Corpus", "icon": "➕"},
+        ]
 
-    # 🇬🇧 UK
     elif user_data["country"] == "UK":
-        corpus_field("PENSION", "Pension Fund")
-        corpus_field("ISA", "ISA")
-        corpus_field("OTHER", "Other Corpus")
+        corpus_config = [
+            {"key": "PENSION", "label": "Pension Fund", "icon": "🏦"},
+            {"key": "ISA", "label": "ISA", "icon": "📘"},
+            {"key": "OTHER", "label": "Other Corpus", "icon": "➕"},
+        ]
+    
+    total = render_corpus_cards(corpus_config)
 
-    #print("InitialCorpus UI", user_data["initial_corpus"])
-    # -----------------------------------------------------
-    # Total (derived only)
-    # -----------------------------------------------------
-    total = sum(user_data["initial_corpus"].values())
+    st.divider()
 
     st.metric(
         "Total Initial Corpus",
         f"{currency}{total:,.0f}"
     )
+
+    # -----------------------------------------------------
+    # Initial Corpus (ONLY source of truth) - OLD UI (for reference)
+    # -----------------------------------------------------
+    
+    #st.subheader("💰 Initial Retirement Corpus")
+    #st.caption("Your current retirement savings")
+
+    #def corpus_field_old(key: str, label: str):
+    #    value = user_data["initial_corpus"].get(key, 0.0)
+
+    #    new_val = st.number_input(
+    #        f"{label} ({currency})",
+    #        min_value=0.0,
+    #        value=float(value),
+    #        disabled=is_guest or not is_premium,
+    #        key=f"corpus_{key}",
+    #    )
+
+    #    user_data["initial_corpus"][key] = new_val
+    #def corpus_field(key: str, label: str):
+    #    value = user_data["initial_corpus"].get(key, 0.0)
+
+    #    new_val = st.number_input(
+    #        f"{label} ({currency})",
+    #        min_value=0.0,
+    #        value=float(value),
+    #        disabled=is_guest or not is_premium,
+    #        key=f"corpus_{key}",
+    #    )
+
+    #    if not is_guest:
+    #        user_data["initial_corpus"][key] = new_val
+    #    else :
+    #        user_data["initial_corpus"][key] = value  # preserve existing value for guest
+
+    # 🇮🇳 INDIA
+    #if user_data["country"] == "IN":
+    #    corpus_field("PF", "Provident Fund (PF)")
+    #    corpus_field("PPF", "Public Provident Fund (PPF)")
+    #    corpus_field("NPS", "National Pension Scheme (NPS)")
+    #    corpus_field("SUPER", "Superannuation")
+    #    corpus_field("OTHER", "Other Corpus")
+
+    # 🇺🇸 US
+    #elif user_data["country"] == "US":
+    #    corpus_field("401K", "401(k)")
+    ##    corpus_field("IRA", "IRA")
+    #    corpus_field("BROKERAGE", "Brokerage Account")
+    #    corpus_field("OTHER", "Other Corpus")
+
+    # 🇬🇧 UK
+    #elif user_data["country"] == "UK":
+    #    corpus_field("PENSION", "Pension Fund")
+    #    corpus_field("ISA", "ISA")
+    #    corpus_field("OTHER", "Other Corpus")
+
+    #print("InitialCorpus UI", user_data["initial_corpus"])
+    # -----------------------------------------------------
+    # Total (derived only)
+    # -----------------------------------------------------
+    #total = sum(user_data["initial_corpus"].values())
+
+    #st.metric(
+    #    "Total Initial Corpus",
+    #    f"{currency}{total:,.0f}"
+    #)
