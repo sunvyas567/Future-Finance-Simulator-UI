@@ -206,6 +206,6 @@ def generate_financial_summary_pdf(
     # =====================================================
     # OUTPUT
     # =====================================================
-    pdf_bytes = pdf.output(dest="S")
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
     return bytes(pdf_bytes)
     #return bytes(pdf.output(dest="S"))
