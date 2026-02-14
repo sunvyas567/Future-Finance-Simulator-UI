@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 import tempfile
 
-from streamlit import pdf
+from streamlit import html, pdf
 
 from streamlit import pdf
 
@@ -77,7 +77,7 @@ class ReportPDF(FPDF):
 # =========================================================
 from typing import Optional
 
-def generate_financial_summary_pdf(
+def generate_financial_summary_pdf_old(
     username: str,
     base_context: dict,
     projection_df: pd.DataFrame,
@@ -209,3 +209,973 @@ def generate_financial_summary_pdf(
     pdf_bytes = pdf.output(dest="S").encode("latin-1")
     return bytes(pdf_bytes)
     #return bytes(pdf.output(dest="S"))
+
+##NOTE: The above function is the old version. The new version is more modular and supports additional features like charts and scenario comparisons. The old version is kept for reference and can be removed if not needed.
+
+import asyncio
+import datetime
+import pandas as pd
+from playwright.async_api import async_playwright
+
+
+# =========================================================
+# HTML TEMPLATE BUILDER
+# =========================================================
+def build_financial_html(
+    username: str,
+    base_context: dict,
+    projection_df: pd.DataFrame,
+    currency: str,
+    retirement_score=None,
+    score_breakdown=None,
+    advisor_advice=None,
+    income_expense_chart_html: str = "",
+    corpus_chart_html: str = "",
+    tax_chart_html: str = "",
+    scenario_comparison_df: pd.DataFrame | None = None,
+):
+
+    import datetime
+
+    meta = base_context["_meta"]
+    y1 = projection_df.iloc[0]
+
+    total_tax_paid = projection_df["TotalTax"].sum()
+    year1_tax = projection_df.iloc[0]["TotalTax"]
+    effective_tax_rate = (
+        year1_tax / max(projection_df.iloc[0]["TotalIncome"], 1)
+    ) * 100
+
+    # ---------------- SCORE BREAKDOWN ----------------
+    breakdown_rows = ""
+    if score_breakdown:
+        for k, v in score_breakdown.items():
+            breakdown_rows += f"<tr><td>{k}</td><td>{v}</td></tr>"
+
+    # ---------------- ADVISOR ----------------
+    advisor_html = ""
+    if advisor_advice:
+        summary = advisor_advice.get("summary", "")
+        positives = advisor_advice.get("positives", [])
+        warnings = advisor_advice.get("warnings", [])
+        recs = advisor_advice.get("recommendations", [])
+
+        advisor_html += "<h2>Advisor Insights</h2>"
+
+        if summary:
+            advisor_html += f"<p><b>Summary:</b> {summary}</p>"
+
+        if positives:
+            advisor_html += "<h3>What’s Working Well</h3><ul>"
+            for p in positives:
+                advisor_html += f"<li>{p}</li>"
+            advisor_html += "</ul>"
+
+        if warnings:
+            advisor_html += "<h3>Warnings</h3><ul>"
+            for w in warnings:
+                advisor_html += f"<li>{w}</li>"
+            advisor_html += "</ul>"
+
+        if recs:
+            advisor_html += "<h3>Recommendations</h3><ul>"
+            for r in recs:
+                advisor_html += f"<li>{r}</li>"
+            advisor_html += "</ul>"
+
+    # ---------------- PROJECTION TABLE ----------------
+    projection_rows = ""
+    for _, r in projection_df.head(5).iterrows():
+        ending = r.get("EndingCorpus", r.get("Ending Corpus", 0))
+        projection_rows += f"""
+        <tr>
+            <td>{int(r["Year"])}</td>
+            <td>{currency}{r["TotalIncome"]:,.0f}</td>
+            <td>{currency}{r["TotalExpenses"]:,.0f}</td>
+            <td>{currency}{ending:,.0f}</td>
+        </tr>
+        """
+
+    # ---------------- SCENARIO TABLE ----------------
+    scenario_rows = ""
+    if scenario_comparison_df is not None and not scenario_comparison_df.empty:
+        for _, r in scenario_comparison_df.iterrows():
+            ending = r.get("EndingCorpus", r.get("Ending Corpus", 0))
+            net = r.get("NetIncomeAfterTax", r.get("Year-1 Net Income", 0))
+            scenario_rows += f"""
+            <tr>
+                <td>{r["Scenario"]}</td>
+                <td>{currency}{ending:,.0f}</td>
+                <td>{currency}{net:,.0f}</td>
+            </tr>
+            """
+
+    # ---------------- HTML ----------------
+    html = f"""
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+@page {{
+    size: A4;
+    margin: 20mm;
+}}
+
+html, body {{
+    font-family: Arial, sans-serif;
+    color: #374151;
+    height: auto !important;
+    overflow: visible !important;
+}}
+
+/* FORCE NATURAL VERTICAL FLOW */
+body * {{
+   /* position: relative !important;*/
+    max-height: none !important;
+}}
+
+/* HEADERS */
+h1 {{
+    background:#6366f1;
+    color:white;
+    padding:15px;
+    text-align:center;
+}}
+
+h2 {{
+    border-bottom:2px solid #e5e7eb;
+    padding-bottom:5px;
+    margin-top:40px;
+
+    /* avoid section split */
+    page-break-after: avoid;
+}}
+
+/* TABLES */
+table {{
+    width:100%;
+    border-collapse: collapse;
+    margin-top:40px;
+    page-break-inside:auto;
+}}
+
+tr {{
+    page-break-inside: avoid;
+    page-break-after: auto;
+    
+}}
+
+th {{
+    background:#6366f1;
+    color:white;
+    padding:8px;
+    text-align:left;
+}}
+
+td {{
+    border:1px solid #e5e7eb;
+    padding:8px;
+}}
+
+/* SCORE */
+.score-box {{
+    background:#eef2ff;
+    padding:20px;
+    font-size:22px;
+    text-align:center;
+    border-radius:10px;
+    margin-top:20px;
+}}
+
+/* ⭐ CRITICAL — CHART PRINT SAFE */
+.chart {{
+    margin-top:30px;
+    width:100%;
+
+    /* 🔥 CRITICAL — never split chart */
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+
+    /* ensure browser treats as solid block */
+    display: block;
+
+    /* optional but recommended */
+    overflow: visible !important;
+}}
+
+/* FORCE PAGE BREAK UTILITY */
+.page-break {{
+    page-break-before: always;
+}}
+
+.plotly-graph-div {{
+    height: 500px !important;
+}}
+
+/* ENSURE CONTENT NEVER CLIPS */
+div {{
+    overflow: visible !important;
+}}
+</style>
+</head>
+
+<body>
+
+<h1>Retirement Financial Summary</h1>
+
+<p><b>User:</b> {username}</p>
+<p><b>Country:</b> {meta['country_label']}</p>
+<p><b>Scenario:</b> {meta['scenario']}</p>
+<p><b>Generated:</b> {datetime.date.today()}</p>
+
+{"<div class='score-box'>Retirement Readiness Score: " + str(retirement_score) + " / 100</div>" if retirement_score else ""}
+
+{"<h2>Score Breakdown</h2><table><tr><th>Category</th><th>Score</th></tr>" + breakdown_rows + "</table>" if breakdown_rows else ""}
+
+<h2>Key Metrics (Year 1)</h2>
+<p>Starting Corpus: {currency}{base_context['initial_corpus']['total']:,.0f}</p>
+<p>Annual Mandatory Expenses: {currency}{y1['AnnualMustExpenses']:,.0f}</p>
+<p>Annual Optional Expenses: {currency}{y1['AnnualOptionalExpenses']:,.0f}</p>
+<p>Net Income After Tax: {currency}{y1['NetIncomeAfterTax']:,.0f}</p>
+
+<h2>Tax Impact Analysis</h2>
+<p>Total Tax Paid Over Projection: {currency}{total_tax_paid:,.0f}</p>
+<p>Year-1 Tax Liability: {currency}{year1_tax:,.0f}</p>
+<p>Effective Tax Rate (Year-1): {effective_tax_rate:.1f}%</p>
+
+.chart-page {{
+    page-break-before: always;
+}}
+
+<h2>Visual Overview</h2>
+<div class="chart-page"></div>
+<div class="chart">{tax_chart_html}</div>
+<div class="chart">{income_expense_chart_html}</div>
+<div class="chart">{corpus_chart_html}</div>
+
+<h2>Projection Snapshot</h2>
+<table>
+<tr>
+<th>Year</th>
+<th>Total Income</th>
+<th>Total Expenses</th>
+<th>Ending Corpus</th>
+</tr>
+{projection_rows}
+</table>
+
+{"<h2>Scenario Comparison</h2><table><tr><th>Scenario</th><th>Ending Corpus</th><th>Net Income (Y1)</th></tr>" + scenario_rows + "</table>" if scenario_rows else ""}
+
+{advisor_html}
+
+</body>
+</html>
+"""
+    return html
+
+def build_financial_html_old(
+    username: str,
+    base_context: dict,
+    projection_df: pd.DataFrame,
+    currency: str,
+    retirement_score=None,
+    score_breakdown=None,
+    advisor_advice=None,
+    income_expense_chart_html: str = "",
+    corpus_chart_html: str = "",
+    tax_chart_html: str = "",
+    scenario_comparison_df: pd.DataFrame | None = None,
+):
+
+    meta = base_context["_meta"]
+    y1 = projection_df.iloc[0]
+
+    total_tax_paid = projection_df["TotalTax"].sum()
+    year1_tax = projection_df.iloc[0]["TotalTax"]
+    effective_tax_rate = (
+        year1_tax / max(projection_df.iloc[0]["TotalIncome"], 1)
+    ) * 100
+    #print(f"DEBUG: Year 1 Total Income: {projection_df.iloc[0]['TotalIncome']}, Year 1 Tax: {year1_tax}, Effective Tax Rate: {effective_tax_rate:.2f}%")
+    # -------------------------------------------------
+    # SCORE BREAKDOWN TABLE
+    # -------------------------------------------------
+    breakdown_rows = ""
+    if score_breakdown:
+        for k, v in score_breakdown.items():
+            breakdown_rows += f"""
+            <tr>
+                <td>{k}</td>
+                <td>{v}</td>
+            </tr>
+            """
+
+    # -------------------------------------------------
+    # ADVISOR CONTENT
+    # -------------------------------------------------
+    advisor_html = ""
+
+    if advisor_advice:
+        summary = advisor_advice.get("summary", "")
+
+        positives = advisor_advice.get("positives", [])
+        warnings = advisor_advice.get("warnings", [])
+        recs = advisor_advice.get("recommendations", [])
+
+        advisor_html += "<h2>Advisor Insights</h2>"
+
+        if summary:
+            advisor_html += f"<p><b>Summary:</b> {summary}</p>"
+
+        if positives:
+            advisor_html += "<h3>What’s Working Well</h3><ul>"
+            for p in positives:
+                advisor_html += f"<li>{p}</li>"
+            advisor_html += "</ul>"
+
+        if warnings:
+            advisor_html += "<h3>Warnings</h3><ul>"
+            for w in warnings:
+                advisor_html += f"<li>{w}</li>"
+            advisor_html += "</ul>"
+
+        if recs:
+            advisor_html += "<h3>Recommendations</h3><ul>"
+            for r in recs:
+                advisor_html += f"<li>{r}</li>"
+            advisor_html += "</ul>"
+
+    # -------------------------------------------------
+    # PROJECTION TABLE
+    # -------------------------------------------------
+    projection_rows = ""
+    for _, r in projection_df.head(5).iterrows():
+        ending = r.get("EndingCorpus", r.get("Ending Corpus", 0))
+        projection_rows += f"""
+        <tr>
+            <td>{int(r["Year"])}</td>
+            <td>{currency}{r["TotalIncome"]:,.0f}</td>
+            <td>{currency}{r["TotalExpenses"]:,.0f}</td>
+            <td>{currency}{ending:,.0f}</td>
+        </tr>
+        """
+
+    # -------------------------------------------------
+    # SCENARIO TABLE
+    # -------------------------------------------------
+    scenario_rows = ""
+    if scenario_comparison_df is not None and not scenario_comparison_df.empty:
+        for _, r in scenario_comparison_df.iterrows():
+            ending = r.get("EndingCorpus", r.get("Ending Corpus", 0))
+            net = r.get("NetIncomeAfterTax", r.get("Year-1 Net Income", 0))
+            scenario_rows += f"""
+            <tr>
+                <td>{r["Scenario"]}</td>
+                <td>{currency}{ending:,.0f}</td>
+                <td>{currency}{net:,.0f}</td>
+            </tr>
+            """
+
+    # -------------------------------------------------
+    # HTML TEMPLATE
+    # -------------------------------------------------
+    html = f"""
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            @page {{
+                size: A4;
+                margin: 20mm;
+            }}
+
+            body {{
+                page-break-inside: auto;
+            }}
+
+            table {{
+                page-break-inside: avoid;
+            }}
+
+            .chart {{
+                page-break-inside: avoid;
+            }}
+
+            .score-box {{
+                page-break-inside: avoid;
+            }}
+
+            h1, h2, h3 {{
+                page-break-after: avoid;
+            }}
+
+            ul {{
+                page-break-inside: avoid;
+            }}
+
+            .section {{
+                page-break-inside: avoid;
+                margin-bottom: 25px;
+            }}
+
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 40px;
+                color: #374151;
+            }}
+            h1 {{
+                background:#6366f1;
+                color:white;
+                padding:15px;
+                text-align:center;
+            }}
+            h2 {{
+                border-bottom:2px solid #e5e7eb;
+                padding-bottom:5px;
+                margin-top:30px;
+            }}
+            table {{
+                width:100%;
+                border-collapse: collapse;
+                margin-top:10px;
+            }}
+            th {{
+                background:#6366f1;
+                color:white;
+                padding:8px;
+                text-align:left;
+            }}
+            td {{
+                border:1px solid #e5e7eb;
+                padding:8px;
+            }}
+            .score-box {{
+                background:#eef2ff;
+                padding:20px;
+                font-size:22px;
+                text-align:center;
+                border-radius:10px;
+                margin-top:20px;
+            }}
+            .chart {{
+                margin-top:25px;
+            }}
+        </style>
+    </head>
+
+    <body>
+
+        <h1>Retirement Financial Summary</h1>
+
+        <p><b>User:</b> {username}</p>
+        <p><b>Country:</b> {meta['country_label']}</p>
+        <p><b>Scenario:</b> {meta['scenario']}</p>
+        <p><b>Generated:</b> {datetime.date.today()}</p>
+
+        {"<div class='score-box'>Retirement Readiness Score: " + str(retirement_score) + " / 100</div>" if retirement_score else ""}
+
+        {f'''
+        <h2>Score Breakdown</h2>
+        <table>
+            <tr><th>Category</th><th>Score</th></tr>
+            {breakdown_rows}
+        </table>
+        ''' if breakdown_rows else ""}
+
+        <h2>Key Metrics (Year 1)</h2>
+        <p>Starting Corpus: {currency}{base_context['initial_corpus']['total']:,.0f}</p>
+        <p>Annual Mandatory Expenses: {currency}{y1['AnnualMustExpenses']:,.0f}</p>
+        <p>Annual Optional Expenses: {currency}{y1['AnnualOptionalExpenses']:,.0f}</p>
+        <p>Net Income After Tax: {currency}{y1['NetIncomeAfterTax']:,.0f}</p>
+
+        <h2>Tax Impact Analysis</h2>
+
+        <p>Total Tax Paid Over Projection: {currency}{total_tax_paid:,.0f}</p>
+        <p>Year-1 Tax Liability: {currency}{year1_tax:,.0f}</p>
+        <p>Effective Tax Rate (Year-1): {effective_tax_rate:.1f}%</p>
+
+        <div class="chart">
+            {tax_chart_html}
+        </div>
+
+        <h2>Visual Overview</h2>
+        <div class="chart">{income_expense_chart_html}</div>
+        <div class="chart">{corpus_chart_html}</div>
+
+        <h2>Projection Snapshot</h2>
+        <table>
+            <tr>
+                <th>Year</th>
+                <th>Total Income</th>
+                <th>Total Expenses</th>
+                <th>Ending Corpus</th>
+            </tr>
+            {projection_rows}
+        </table>
+
+        {f'''
+        <h2>Scenario Comparison</h2>
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>Ending Corpus</th>
+                <th>Net Income (Y1)</th>
+            </tr>
+            {scenario_rows}
+        </table>
+        ''' if scenario_rows else ""}
+
+        {advisor_html}
+
+    </body>
+    </html>
+    """
+
+    return html
+
+# =========================================================
+# PLAYWRIGHT PDF GENERATOR
+# =========================================================
+async def _html_to_pdf_bytes_old(html: str) -> bytes:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.set_content(html, wait_until="networkidle")
+
+        pdf_bytes = await page.pdf(
+            format="A4",
+            print_background=True,
+            margin={"top": "20px", "bottom": "20px", "left": "20px", "right": "20px"},
+        )
+
+        await browser.close()
+        return pdf_bytes
+
+#from playwright.sync_api import sync_playwright
+
+from playwright.async_api import async_playwright
+
+async def generate_pdf(html_file, output_pdf):
+    #print("DEBUG: Starting PDF generation with Playwright...")
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+
+        # Load file
+        #-await page.goto(f"file://{html_file}", wait_until="networkidle")
+        await page.set_content(html_file, wait_until="networkidle")
+
+
+        # Render like browser (NOT print)
+        await page.emulate_media(media="screen")
+
+        # Wait for charts / JS
+        await page.wait_for_timeout(2000)
+
+        # Fix pagination + clipping
+        await page.add_style_tag(content="""
+        * {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .chart-container, canvas, .plotly {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 400px !important;
+        }
+        """)
+
+        # Generate PDF
+        pdf_bytes = await page.pdf(
+            format="A4",
+            print_background=True,
+            prefer_css_page_size=True,
+            margin={"top":"15mm","bottom":"15mm","left":"10mm","right":"10mm"}
+        )
+        
+        await browser.close()
+        #print(f"DEBUG: PDF generated and saved to {output_pdf}")
+        return pdf_bytes
+
+from playwright.sync_api import sync_playwright
+
+def _html_to_pdf_bytes(html: str) -> bytes:
+    print("DEBUG: In html_to_pdf_bytes...")
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+
+        # Load HTML
+        page.set_content(html, wait_until="networkidle")
+
+        # -----------------------------
+        # WAIT FOR PLOTLY FULL RENDER
+        # -----------------------------
+        page.wait_for_function("""
+            () => {
+                if (!window.Plotly) return false;
+
+                const charts = document.querySelectorAll('.plotly-graph-div');
+                if (charts.length === 0) return true;
+
+                return Array.from(charts).every(
+                    c => c._fullLayout && c._fullLayout._plots
+                );
+            }
+        """)
+
+        # -----------------------------
+        # WAIT UNTIL PAGE HEIGHT STOPS CHANGING
+        # -----------------------------
+        print("DEBUG: Waiting for page height to stabilize...")
+        page.wait_for_function("""
+            () => {
+                return new Promise(resolve => {
+                    let last = document.body.scrollHeight;
+                    let stable = 0;
+
+                    const interval = setInterval(() => {
+                        const now = document.body.scrollHeight;
+
+                        if (now === last) {
+                            stable++;
+                            if (stable >= 3) {
+                                clearInterval(interval);
+                                resolve(true);
+                            }
+                        } else {
+                            stable = 0;
+                            last = now;
+                        }
+                    }, 300);
+                });
+            }
+        """)
+
+        # -----------------------------
+        # FORCE FINAL LAYOUT
+        # -----------------------------
+        page.evaluate("""
+            window.dispatchEvent(new Event('resize'));
+        """)
+
+        page.wait_for_timeout(800)
+
+        # -----------------------------
+        # GENERATE PDF
+        # -----------------------------
+        pdf_bytes = page.pdf(
+            format="A4",
+            print_background=True,
+            prefer_css_page_size=True,
+            margin={
+                "top": "20mm",
+                "bottom": "20mm",
+                "left": "15mm",
+                "right": "15mm",
+            }
+        )
+
+        browser.close()
+        return pdf_bytes
+
+def _html_to_pdf_bytes_old2(html: str) -> bytes:
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+
+        # Load HTML and WAIT for everything
+        page.set_content(html, wait_until="networkidle")
+
+        # ⭐ CRITICAL — wait for Plotly charts to render
+        page.wait_for_timeout(2000)
+
+        # If charts exist, wait until Plotly finished drawing
+        try:
+            page.wait_for_function(
+                "window.Plotly !== undefined"
+            )
+        except:
+            pass
+
+        # ⭐ ensure full height render
+        page.evaluate("document.body.style.zoom = '1.0'")
+
+        pdf_bytes = page.pdf(
+            format="A4",
+            print_background=True,
+            margin={
+                "top": "20mm",
+                "bottom": "20mm",
+                "left": "15mm",
+                "right": "15mm",
+            }
+        )
+
+        browser.close()
+        return pdf_bytes
+
+def generate_financial_summary_pdf_playwright(
+    username,
+    base_context,
+    projection_df,
+    currency,
+    retirement_score=None,
+    score_breakdown=None,
+    advisor_advice=None,
+    income_expense_chart_html="",
+    corpus_chart_html="",
+    tax_chart_html="",     # ⭐ NEW
+    scenario_comparison_df=None,
+):
+    html = build_financial_html(
+        username,
+        base_context,
+        projection_df,
+        currency,
+        retirement_score=retirement_score,
+        score_breakdown=score_breakdown,
+        advisor_advice=advisor_advice,
+        income_expense_chart_html=income_expense_chart_html,
+        corpus_chart_html=corpus_chart_html,
+        tax_chart_html=tax_chart_html,
+        scenario_comparison_df=scenario_comparison_df,
+    )
+    with open("debug.html", "w") as f:
+        f.write(html)
+
+    # return _html_to_pdf_bytes(html)
+    # generate_pdf(html, "output.pdf")
+    print("DEBUG: Starting PDF generation...")
+    return asyncio.run(generate_pdf(html, "output.pdf"))
+
+#from weasyprint import HTML
+#import datetime
+
+
+def generate_financial_summary_pdf_weasyprint(
+        username,
+        base_context,
+        projection_df,
+        currency,
+        *,
+        retirement_score=None,
+        score_breakdown=None,
+        advisor_advice=None,
+        income_expense_chart_html=None,
+        corpus_chart_html=None,
+        tax_chart_html=None,
+        scenario_comparison_df=None,
+    ):
+
+        meta = base_context["_meta"]
+        y1 = projection_df.iloc[0]
+
+        # ---------------------------------------------------
+        # SCORE INTERPRETATION
+        # ---------------------------------------------------
+        if retirement_score is not None:
+            if retirement_score >= 80:
+                score_text = "You are on track for a confident retirement."
+                score_color = "#16a34a"
+            elif retirement_score >= 60:
+                score_text = "Moderately prepared. Some adjustments recommended."
+                score_color = "#f59e0b"
+            else:
+                score_text = "Plan requires strengthening."
+                score_color = "#ef4444"
+        else:
+            score_text = ""
+            score_color = "#6b7280"
+
+        # ---------------------------------------------------
+        # SCORE BREAKDOWN TABLE
+        # ---------------------------------------------------
+        breakdown_rows = ""
+        if score_breakdown:
+            for k, v in score_breakdown.items():
+                breakdown_rows += f"<tr><td>{k}</td><td>{v}</td></tr>"
+
+        # ---------------------------------------------------
+        # PROJECTION TABLE
+        # ---------------------------------------------------
+        projection_rows = ""
+        for _, r in projection_df.head(10).iterrows():
+            ending = r.get("EndingCorpus", r.get("Ending Corpus", 0))
+            projection_rows += f"""
+            <tr>
+                <td>{int(r['Year'])}</td>
+                <td>{currency}{r['TotalIncome']:,.0f}</td>
+                <td>{currency}{r['TotalExpenses']:,.0f}</td>
+                <td>{currency}{ending:,.0f}</td>
+            </tr>
+            """
+
+        # ---------------------------------------------------
+        # SCENARIO TABLE
+        # ---------------------------------------------------
+        scenario_html = ""
+        if scenario_comparison_df is not None and not scenario_comparison_df.empty:
+            rows = ""
+            for _, r in scenario_comparison_df.iterrows():
+                rows += f"""
+                <tr>
+                    <td>{r['Scenario']}</td>
+                    <td>{currency}{r['Ending Corpus']:,.0f}</td>
+                    <td>{currency}{r['Year-1 Net Income']:,.0f}</td>
+                </tr>
+                """
+
+            scenario_html = f"""
+            <div class="section">
+                <h2>Scenario Comparison</h2>
+                <table>
+                    <tr><th>Scenario</th><th>Ending Corpus</th><th>Year-1 Net Income</th></tr>
+                    {rows}
+                </table>
+            </div>
+            """
+
+        # ---------------------------------------------------
+        # ADVISOR PANEL HTML
+        # ---------------------------------------------------
+        advice_html = ""
+        if advisor_advice:
+            def render_list(title, items, color):
+                if not items:
+                    return ""
+                lis = "".join(f"<li>{i}</li>" for i in items)
+                return f"<h3 style='color:{color}'>{title}</h3><ul>{lis}</ul>"
+
+            advice_html = f"""
+            <div class="section">
+                <h2>Advisor Insights</h2>
+                <p><b>Summary:</b> {advisor_advice.get("summary","")}</p>
+                {render_list("What’s Working Well", advisor_advice.get("positives",[]), "#16a34a")}
+                {render_list("Warnings", advisor_advice.get("warnings",[]), "#f59e0b")}
+                {render_list("Recommendations", advisor_advice.get("recommendations",[]), "#2563eb")}
+            </div>
+            """
+
+        # ---------------------------------------------------
+        # HTML DOCUMENT
+        # ---------------------------------------------------
+        html = f"""
+    <html>
+    <head>
+    <meta charset="utf-8">
+    <style>
+
+    @page {{ margin: 25mm; }}
+
+    body {{
+        font-family: Arial, sans-serif;
+        color:#374151;
+    }}
+
+    .cover {{
+        text-align:center;
+        margin-top:120px;
+    }}
+
+    .score {{
+        font-size:60px;
+        font-weight:bold;
+        color:{score_color};
+    }}
+
+    .section {{
+        margin-top:40px;
+    }}
+
+    table {{
+        width:100%;
+        border-collapse:collapse;
+        margin-top:10px;
+    }}
+
+    th {{
+        background:#6366f1;
+        color:white;
+        padding:8px;
+    }}
+
+    td {{
+        padding:7px;
+        border-bottom:1px solid #e5e7eb;
+    }}
+
+    .chart {{
+        margin-top:20px;
+    }}
+
+    .page-break {{
+        page-break-before:always;
+    }}
+
+    </style>
+    </head>
+
+    <body>
+
+    <!-- COVER PAGE -->
+    <div class="cover">
+    <h1>Retirement Financial Plan</h1>
+    <h3>{username}</h3>
+    <p>{meta["country_label"]}</p>
+    <p>Scenario: {meta["scenario"]}</p>
+    <p>{datetime.date.today()}</p>
+
+    <div class="score">{retirement_score}/100</div>
+    <p>{score_text}</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SCORECARD -->
+    <div class="section">
+    <h2>Retirement Readiness Score Breakdown</h2>
+    <table>
+    <tr><th>Category</th><th>Score</th></tr>
+    {breakdown_rows}
+    </table>
+    </div>
+
+    <!-- SNAPSHOT -->
+    <div class="section">
+    <h2>Financial Snapshot (Year 1)</h2>
+    <p>Starting Corpus: {currency}{base_context['initial_corpus']['total']:,.0f}</p>
+    <p>Mandatory Expenses: {currency}{y1['AnnualMustExpenses']:,.0f}</p>
+    <p>Optional Expenses: {currency}{y1['AnnualOptionalExpenses']:,.0f}</p>
+    <p>Net Income: {currency}{y1['NetIncomeAfterTax']:,.0f}</p>
+    </div>
+
+    <!-- CHARTS -->
+    {f"<div class='section'><h2>Income vs Expenses</h2>{income_expense_chart_html}</div>" if income_expense_chart_html else ""}
+    {f"<div class='section'><h2>Corpus Trajectory</h2>{corpus_chart_html}</div>" if corpus_chart_html else ""}
+    {f"<div class='section'><h2>Tax Impact</h2>{tax_chart_html}</div>" if tax_chart_html else ""}
+
+    {scenario_html}
+    {advice_html}
+
+    <div class="section">
+    <h2>Projection Table</h2>
+    <table>
+    <tr><th>Year</th><th>Total Income</th><th>Total Expenses</th><th>Ending Corpus</th></tr>
+    {projection_rows}
+    </table>
+    </div>
+
+    <div class="section">
+    <p style="font-size:10px;color:#6b7280">
+    This report is an estimate based on assumptions and projections. Not investment advice.
+    </p>
+    </div>
+
+    </body>
+    </html>
+    """
+
+        return HTML(string=html).write_pdf()

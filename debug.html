@@ -1,0 +1,192 @@
+
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+@page {
+    size: A4;
+    margin: 20mm;
+}
+
+html, body {
+    font-family: Arial, sans-serif;
+    color: #374151;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+/* FORCE NATURAL VERTICAL FLOW */
+body * {
+   /* position: relative !important;*/
+    max-height: none !important;
+}
+
+/* HEADERS */
+h1 {
+    background:#6366f1;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+h2 {
+    border-bottom:2px solid #e5e7eb;
+    padding-bottom:5px;
+    margin-top:40px;
+
+    /* avoid section split */
+    page-break-after: avoid;
+}
+
+/* TABLES */
+table {
+    width:100%;
+    border-collapse: collapse;
+    margin-top:40px;
+    page-break-inside:auto;
+}
+
+tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+    
+}
+
+th {
+    background:#6366f1;
+    color:white;
+    padding:8px;
+    text-align:left;
+}
+
+td {
+    border:1px solid #e5e7eb;
+    padding:8px;
+}
+
+/* SCORE */
+.score-box {
+    background:#eef2ff;
+    padding:20px;
+    font-size:22px;
+    text-align:center;
+    border-radius:10px;
+    margin-top:20px;
+}
+
+/* ⭐ CRITICAL — CHART PRINT SAFE */
+.chart {
+    margin-top:30px;
+    width:100%;
+
+    /* 🔥 CRITICAL — never split chart */
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+
+    /* ensure browser treats as solid block */
+    display: block;
+
+    /* optional but recommended */
+    overflow: visible !important;
+}
+
+/* FORCE PAGE BREAK UTILITY */
+.page-break {
+    page-break-before: always;
+}
+
+.plotly-graph-div {
+    height: 500px !important;
+}
+
+/* ENSURE CONTENT NEVER CLIPS */
+div {
+    overflow: visible !important;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Retirement Financial Summary</h1>
+
+<p><b>User:</b> sunvyas</p>
+<p><b>Country:</b> India</p>
+<p><b>Scenario:</b> Base</p>
+<p><b>Generated:</b> 2026-02-14</p>
+
+<div class='score-box'>Retirement Readiness Score: 55 / 100</div>
+
+<h2>Score Breakdown</h2><table><tr><th>Category</th><th>Score</th></tr><tr><td>Corpus Sustainability</td><td>10</td></tr><tr><td>Income Coverage</td><td>25</td></tr><tr><td>Withdrawal Safety</td><td>5</td></tr><tr><td>Tax Efficiency</td><td>15</td></tr></table>
+
+<h2>Key Metrics (Year 1)</h2>
+<p>Starting Corpus: ₹300,000</p>
+<p>Annual Mandatory Expenses: ₹438,000</p>
+<p>Annual Optional Expenses: ₹84,000</p>
+<p>Net Income After Tax: ₹523,492</p>
+
+<h2>Tax Impact Analysis</h2>
+<p>Total Tax Paid Over Projection: ₹33,745</p>
+<p>Year-1 Tax Liability: ₹21,498</p>
+<p>Effective Tax Rate (Year-1): 3.9%</p>
+
+.chart-page {
+    page-break-before: always;
+}
+
+<h2>Visual Overview</h2>
+<div class="chart-page"></div>
+<div class="chart"><div>                            <div id="80607297-8713-4636-8f54-5fe6970e6b97" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("80607297-8713-4636-8f54-5fe6970e6b97")) {                    Plotly.newPlot(                        "80607297-8713-4636-8f54-5fe6970e6b97",                        [{"hovertemplate":"variable=TotalTax\u003cbr\u003eYear=%{x}\u003cbr\u003evalue=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"TotalTax","line":{"color":"#f59e0b","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines+markers","name":"TotalTax","orientation":"v","showlegend":true,"x":{"dtype":"i1","bdata":"AQI="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAID+1ECF61G4vuvHQA=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"variable=NetIncomeAfterTax\u003cbr\u003eYear=%{x}\u003cbr\u003evalue=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"NetIncomeAfterTax","line":{"color":"#22c55e","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines+markers","name":"NetIncomeAfterTax","orientation":"v","showlegend":true,"x":{"dtype":"i1","bdata":"AQI="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAJDzH0FI4XoUOXYdQQ=="},"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1111111111111111,"#000022"],[0.2222222222222222,"#000023"],[0.3333333333333333,"#000024"],[0.4444444444444444,"#000025"],[0.5555555555555556,"#000026"],[0.6666666666666666,"#000027"],[0.7777777777777778,"#000028"],[0.8888888888888888,"#000029"],[1.0,"#000030"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Year"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"value"}},"legend":{"title":{"text":"variable"},"tracegroupgap":0},"margin":{"t":60}},                        {"responsive": true}                    )                };            </script>        </div></div>
+<div class="chart"><div>                            <div id="145a0b20-f050-411c-83f2-ae8b41c85aca" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("145a0b20-f050-411c-83f2-ae8b41c85aca")) {                    Plotly.newPlot(                        "145a0b20-f050-411c-83f2-ae8b41c85aca",                        [{"hovertemplate":"variable=TotalIncome\u003cbr\u003eYear=%{x}\u003cbr\u003evalue=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"TotalIncome","line":{"color":"#22c55e","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines+markers","name":"TotalIncome","orientation":"v","showlegend":true,"x":{"dtype":"i1","bdata":"AQI="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAALyhIEGkcD0KlzUeQQ=="},"yaxis":"y","type":"scatter"},{"hovertemplate":"variable=TotalExpenses\u003cbr\u003eYear=%{x}\u003cbr\u003evalue=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"TotalExpenses","line":{"color":"#ef4444","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines+markers","name":"TotalExpenses","orientation":"v","showlegend":true,"x":{"dtype":"i1","bdata":"AQI="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAEDcH0EAAAAA0OIgQQ=="},"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1111111111111111,"#000022"],[0.2222222222222222,"#000023"],[0.3333333333333333,"#000024"],[0.4444444444444444,"#000025"],[0.5555555555555556,"#000026"],[0.6666666666666666,"#000027"],[0.7777777777777778,"#000028"],[0.8888888888888888,"#000029"],[1.0,"#000030"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Year"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"value"}},"legend":{"title":{"text":"variable"},"tracegroupgap":0},"margin":{"t":60}},                        {"responsive": true}                    )                };            </script>        </div></div>
+<div class="chart"><div>                            <div id="46b5189e-f950-467c-af4d-e3850abfedbe" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("46b5189e-f950-467c-af4d-e3850abfedbe")) {                    Plotly.newPlot(                        "46b5189e-f950-467c-af4d-e3850abfedbe",                        [{"fillpattern":{"shape":""},"hovertemplate":"Year=%{x}\u003cbr\u003eEndingCorpus=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","line":{"color":"#6366f1"},"marker":{"symbol":"circle"},"mode":"lines","name":"","orientation":"v","showlegend":false,"stackgroup":"1","x":{"dtype":"i1","bdata":"AQI="},"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAIy\u002fO8GuR+G6Jag+wQ=="},"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1111111111111111,"#000022"],[0.2222222222222222,"#000023"],[0.3333333333333333,"#000024"],[0.4444444444444444,"#000025"],[0.5555555555555556,"#000026"],[0.6666666666666666,"#000027"],[0.7777777777777778,"#000028"],[0.8888888888888888,"#000029"],[1.0,"#000030"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Year"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"EndingCorpus"}},"legend":{"tracegroupgap":0},"margin":{"t":60}},                        {"responsive": true}                    )                };            </script>        </div></div>
+
+<h2>Projection Snapshot</h2>
+<table>
+<tr>
+<th>Year</th>
+<th>Total Income</th>
+<th>Total Expenses</th>
+<th>Ending Corpus</th>
+</tr>
+
+        <tr>
+            <td>1</td>
+            <td>₹544,990</td>
+            <td>₹522,000</td>
+            <td>₹-1,818,508</td>
+        </tr>
+        
+        <tr>
+            <td>2</td>
+            <td>₹494,950</td>
+            <td>₹553,320</td>
+            <td>₹-2,009,126</td>
+        </tr>
+        
+</table>
+
+<h2>Scenario Comparison</h2><table><tr><th>Scenario</th><th>Ending Corpus</th><th>Net Income (Y1)</th></tr>
+            <tr>
+                <td>Base</td>
+                <td>₹-2,009,126</td>
+                <td>₹523,492</td>
+            </tr>
+            
+            <tr>
+                <td>Aggressive</td>
+                <td>₹-2,013,944</td>
+                <td>₹525,570</td>
+            </tr>
+            
+            <tr>
+                <td>Conservative</td>
+                <td>₹-2,004,599</td>
+                <td>₹521,414</td>
+            </tr>
+            </table>
+
+<h2>Advisor Insights</h2><p><b>Summary:</b> Scenario 'Base' results in a health score of 15/100.</p><h3>What’s Working Well</h3><ul><li>Your income comfortably covers expenses in the first year.</li><li>Your tax burden appears manageable.</li></ul><h3>Recommendations</h3><ul><li>Consider lowering withdrawals or increasing growth-oriented allocations.</li><li>Build a higher income buffer or reduce fixed costs.</li><li>Immediate restructuring required: reduce withdrawals or extend working years.</li></ul>
+
+</body>
+</html>

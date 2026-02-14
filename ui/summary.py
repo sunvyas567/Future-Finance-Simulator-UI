@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from ui.pdf import generate_financial_summary_pdf
+from ui.pdf import generate_financial_summary_pdf_playwright
 from ui.retirement_profiles import RETIREMENT_PROFILES
 from services.api_client import get_advisor_recommendations
 from ui.advisor_panel import render_advisor_panel
@@ -296,22 +296,40 @@ def render_summary(projections, user_data, user, base_context):
     income_expense_png = None
     corpus_png = None
     
-    try:
-        income_expense_png = fig_ie.to_image(format="png", scale=2)
-        corpus_png = fig_corpus.to_image(format="png", scale=2)
-    except Exception as e:
-        st.warning("Chart images unavailable (kaleido not installed).")
+    income_expense_chart_html = fig_ie.to_html(full_html=False, include_plotlyjs=False)
+    corpus_chart_html = fig_corpus.to_html(full_html=False, include_plotlyjs=False)
+    tax_chart_html = fig_tax.to_html(full_html=False, include_plotlyjs=False)
 
+    #try:
+    #    income_expense_png = fig_ie.to_image(format="png", scale=2)
+    #    corpus_png = fig_corpus.to_image(format="png", scale=2)
+    #except Exception as e:
+    #    st.warning("Chart images unavailable (kaleido not installed).")
+    print("Tax chart HTML length:", len(tax_chart_html))
     if user.get("is_premium"):
         if st.button("📥 Download Detailed Retirement Report (PDF"):
-            pdf_bytes = generate_financial_summary_pdf(
+            #pdf_bytes = generate_financial_summary_pdf(
+            #    username=user["username"],
+            #     base_context=base_context,
+            #    projection_df=df,
+            #    currency=currency,
+            #    income_expense_chart_png=income_expense_png,
+            #    corpus_chart_png=corpus_png,
+            #    scenario_comparison_df=cmp_df if not cmp_df.empty else None,
+            #)
+
+            pdf_bytes = generate_financial_summary_pdf_playwright(
                 username=user["username"],
                 base_context=base_context,
                 projection_df=df,
                 currency=currency,
-                income_expense_chart_png=income_expense_png,
-                corpus_chart_png=corpus_png,
-                scenario_comparison_df=cmp_df if not cmp_df.empty else None,
+                retirement_score=score,
+                score_breakdown=breakdown,
+                advisor_advice=advice,
+                income_expense_chart_html=income_expense_chart_html,
+                corpus_chart_html=corpus_chart_html,
+                tax_chart_html=tax_chart_html,
+                scenario_comparison_df=cmp_df
             )
 
             if isinstance(pdf_bytes, bytearray):
