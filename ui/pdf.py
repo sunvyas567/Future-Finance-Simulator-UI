@@ -943,8 +943,8 @@ def generate_financial_summary_pdf_playwright(
         tax_chart_html=tax_chart_html,
         scenario_comparison_df=scenario_comparison_df,
     )
-    with open("debug.html", "w") as f:
-        f.write(html)
+    #with open("debug.html", "w") as f:
+    #    f.write(html)
 
     # return _html_to_pdf_bytes(html)
     # generate_pdf(html, "output.pdf")
