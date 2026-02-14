@@ -4,6 +4,11 @@ from ui.auth import get_authenticator
 
 import streamlit as st
 
+import subprocess, os
+
+if not os.path.exists("/home/appuser/.cache/ms-playwright"):
+    subprocess.run(["playwright", "install", "chromium"], check=True)
+
 # --------------------------------------------------
 # GLOBAL session initialization (MUST BE FIRST)
 # --------------------------------------------------
