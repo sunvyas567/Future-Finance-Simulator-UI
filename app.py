@@ -80,33 +80,96 @@ def render_demo():
     # 🔥 DEMO MUST ALWAYS RENDER SIMULATOR
     run_simulator(is_guest=True)
 
+from datetime import datetime
+
+def save_user_to_firebase(
+    username: str,
+    email: str,
+    name: str,
+    password_hash: str,
+):
+    """
+    Creates / initializes a user record in Firebase.
+    Called ONLY at registration time.
+    """
+
+    user_ref = db.collection("users").document(username)
+
+    existing = user_ref.get()
+
+    # -----------------------------
+    # If user already exists → do nothing
+    # -----------------------------
+    if existing.exists:
+        print(f"User '{username}' already exists in Firebase")
+        return {"status": "exists"}
+
+    # -----------------------------
+    # Create new user record
+    # -----------------------------
+    user_doc = {
+        "username": username,
+        "email": email,
+        "name": name,
+        "password_hash": password_hash,   # 🔐 store hashed password only
+        "created_at": datetime.utcnow(),
+        "app_data": {},                   # optional initial empty data
+    }
+
+    user_ref.set(user_doc)
+
+    print(f"Created Firebase user document for '{username}'")
+
+    return {"status": "created"}
+
+from ui.auth_pages import render_login, render_register
 
 def render_auth():
-    authenticator = get_authenticator()
-
     if st.session_state.view == "login":
-        st.title("Login")
-        authenticator.login(location="main")
-
-        if st.session_state.authentication_status is True:
-            st.session_state.view = "app"
-            st.rerun()
-        elif st.session_state.authentication_status is False:
-            st.error("Invalid username or password")
-
+        render_login()
     elif st.session_state.view == "register":
-        st.title("Create an Account")
-        email, username, name = authenticator.register_user(location="main")
-
-        if email:
-            st.success("Account created successfully. Please login.")
-            st.session_state.view = "login"
-            st.rerun()
+        render_register()
 
     st.markdown("---")
     if st.button("⬅ Back to Home"):
         st.session_state.view = "landing"
         st.rerun()
+
+#def render_auth():
+#    authenticator = get_authenticator()
+
+#    if st.session_state.view == "login":
+#        st.title("Login")
+#        authenticator.login(location="main")
+
+#        if st.session_state.authentication_status is True:
+#            st.session_state.view = "app"
+#            st.rerun()
+#        elif st.session_state.authentication_status is False:
+#            st.error("Invalid username or password")
+
+#    elif st.session_state.view == "register":
+#        st.title("Create an Account")
+#        email, username, name = authenticator.register_user(location="main")
+
+#        if email:
+#            st.success("Account created successfully. Please login.")
+#            password_hash = config["credentials"]["usernames"][username]["password"]
+#            #authenticator.credentials["usernames"][username]["password"]
+
+#            save_user_to_firebase(
+#                username=username,
+#                email=email,
+#                name=name,
+#                password_hash=password_hash
+#            )
+#            st.session_state.view = "login"
+#            st.rerun()
+
+#    st.markdown("---")
+#    if st.button("⬅ Back to Home"):
+#        st.session_state.view = "landing"
+#        st.rerun()
 
 
 def render_app():

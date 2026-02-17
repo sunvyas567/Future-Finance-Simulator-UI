@@ -12,6 +12,15 @@ from ui.currency import get_currency
 
 import copy
 
+# =========================================================
+# INVESTMENT LIMITS (INDIA)
+# =========================================================
+SCSS_MAX_INVESTMENT = 30_00_000   # 30 lakh per individual
+POMIS_MAX_INVESTMENT = 4_50_000   # 4.5 lakh single account
+SCSS_MAX = 30_00_000   # 30 lakh per individual
+POMIS_MAX_SINGLE = 4_50_000   # 4.5 lakh single account
+
+SCSS_MIN_AGE = 60
 
 def ensure_scenarios(plan: dict, country: str):
     plan.setdefault("active_scenario", "Base")
@@ -72,10 +81,10 @@ def _default_scenario(country: str) -> dict:
     if country == "IN":
         return {
             "allocations": {
-                "SWP": 40,
+                "SWP": 50,
                 "FD": 30,
-                "SCSS": 20,
-                "POMIS": 10,
+                "SCSS":15,
+                "POMIS": 5,
             },
             "rates": {
                 "SWP": 8.0,
@@ -210,6 +219,93 @@ def _allocation_fields(country):
 
 
 # =========================================================
+# ELIGIBILITY & LIMIT HELPERS
+# =========================================================
+def get_user_age(user_data: dict):
+    age = user_data.get("GLAge", {}).get("input")
+    return int(age) if age else None
+
+# =========================================================
+# INVESTMENT CAP ENGINE (SINGLE SOURCE OF TRUTH)
+# =========================================================
+
+def apply_instrument_caps(
+    total_corpus: float,
+    allocations: dict,
+    age: int | None,
+    pomis_limit=POMIS_MAX_SINGLE,
+):
+    """
+    Final enforcement engine.
+    Used for BOTH UI display and backend projection safety.
+    """
+
+    capped = allocations.copy()
+    surplus_pct = 0.0
+
+    if total_corpus <= 0:
+        return capped, 0.0
+
+    # ---------- SCSS age eligibility ----------
+    if age is None or age < SCSS_MIN_AGE:
+        surplus_pct += capped.get("SCSS", 0)
+        capped["SCSS"] = 0
+
+    # ---------- SCSS cap ----------
+    scss_pct_limit = min(100.0, (SCSS_MAX / total_corpus) * 100)
+    if capped.get("SCSS", 0) > scss_pct_limit:
+        surplus_pct += capped["SCSS"] - scss_pct_limit
+        capped["SCSS"] = scss_pct_limit
+
+    # ---------- POMIS cap ----------
+    pomis_pct_limit = min(100.0, (pomis_limit / total_corpus) * 100)
+    if capped.get("POMIS", 0) > pomis_pct_limit:
+        surplus_pct += capped["POMIS"] - pomis_pct_limit
+        capped["POMIS"] = pomis_pct_limit
+
+    # ---------- redirect surplus to SWP ----------
+    capped["SWP"] = capped.get("SWP", 0) + surplus_pct
+
+    return capped, surplus_pct
+
+
+def get_instrument_max_percent(
+    instrument: str,
+    total_corpus: float,
+    age: int | None,
+):
+    """Used ONLY for UI slider max values"""
+
+    if total_corpus <= 0:
+        return 0.0
+
+    if instrument == "SCSS":
+        if age is None or age < SCSS_MIN_AGE:
+            return 0.0
+        return min(100.0, (SCSS_MAX / total_corpus) * 100)
+
+    if instrument == "POMIS":
+        return min(100.0, (POMIS_MAX_SINGLE / total_corpus) * 100)
+
+    return 100.0
+
+
+def get_allocation_max_pct(instrument, total_corpus, age):
+    if instrument == "SCSS":
+        if age is None or age < SCSS_MIN_AGE:
+            return 0.0
+        return min(100, (SCSS_MAX / total_corpus) * 100) if total_corpus else 0
+
+    if instrument == "POMIS":
+        return min(100, (POMIS_MAX_SINGLE / total_corpus) * 100) if total_corpus else 0
+
+    return 100.0
+
+def is_scss_eligible(user_data: dict) -> bool:
+    return get_user_age(user_data) >= SCSS_MIN_AGE
+
+
+# =========================================================
 # MAIN UI
 # =========================================================
 
@@ -320,7 +416,14 @@ def render_investment_plan(user_data: dict, user: dict):
     #print("CORPUS", corpus)
     total_corpus = round(sum(corpus.values()), 2)
 
-    st.metric("Total Starting Corpus", f"{currency}{total_corpus:,.0f}")
+    age = get_user_age(user_data)
+
+    # ---------------------------------------------------------
+    # ENFORCE GOVT INVESTMENT LIMITS
+    # ---------------------------------------------------------
+    #enforce_investment_caps(scenario, total_corpus, user_data)
+
+    st.metric("Total Starting Corpus TESTTTTT", f"{currency}{total_corpus:,.0f}")
 
     if corpus:
         st.dataframe(
@@ -341,45 +444,48 @@ def render_investment_plan(user_data: dict, user: dict):
     #st.subheader("B️⃣ Allocation & Expected Returns")
     st.subheader("💰  Where Your Money Is Invested - Allocation & Expected Returns")
     st.caption("How your savings are allocated and the income they may generate.")
-
-
-    rows = []
-    alloc_total = 0.0
-
-    for key, label in _allocation_fields(country):
-        alloc = float(scenario["allocations"][key])
-        rate = float(scenario["rates"][key])
-
-        allocated_amt = round(total_corpus * alloc / 100, 2)
-        annual_income = round(allocated_amt * rate / 100, 2)
-
-        rows.append({
-            "Instrument": label,
-            "How much goes where - Allocation %": alloc,
-            "Expected Yearl Return - Rate %": rate,
-            "Allocated Amount": allocated_amt,
-            "Estimated Yearly Income": annual_income,
-        })
-
-        alloc_total += alloc
-
-    st.dataframe(pd.DataFrame(rows), use_container_width=True)
-
-    if alloc_total != 100:
-        st.warning(f"Allocation totals {alloc_total}%. Recommended: 100%.")
-
+    
     st.markdown("### ✏️ Edit Allocation & Rates")
 
+    # ---------- UI MAX LIMITS ----------
+    ui_max = {
+        key: get_instrument_max_percent(key, total_corpus, age)
+        for key, _ in _allocation_fields(country)
+    }
+
     for key, label in _allocation_fields(country):
+
         c1, c2 = st.columns(2)
+
+        max_pct = float(ui_max[key])
+        current_val = float(scenario["allocations"].get(key, 0))
+
+        # ---------- SCSS eligibility ----------
+        scss_not_allowed = (
+            key == "SCSS" and (age is None or age < SCSS_MIN_AGE)
+        )
+
+        if scss_not_allowed:
+            current_val = 0.0
+            scenario["allocations"][key] = 0.0
+
+        else:
+            current_val = min(current_val, max_pct)
+            scenario["allocations"][key] = current_val
 
         with c1:
             scenario["allocations"][key] = st.number_input(
                 f"{label} Allocation %",
-                0.0, 100.0,
-                step=5.0,
-                value=float(scenario["allocations"][key]),
-                disabled=not editable,
+                min_value=0.0,
+                max_value=max_pct,
+                step=1.0,
+                value=float(current_val),
+                disabled=(not editable) or scss_not_allowed,
+                help=(
+                    "Available only after age 60"
+                    if scss_not_allowed
+                    else f"Max allowed: {max_pct:.2f}%"
+                ),
             )
 
         with c2:
@@ -388,9 +494,130 @@ def render_investment_plan(user_data: dict, user: dict):
                 0.0, 20.0,
                 step=0.25,
                 value=float(scenario["rates"][key]),
-                disabled=not editable,
+                disabled=(not editable) or scss_not_allowed,
             )
 
+    #for key, label in _allocation_fields(country):
+    #    c1, c2 = st.columns(2)
+
+    #    max_pct = float(ui_max[key])
+    #    current_val = float(scenario["allocations"].get(key, 0))
+
+        # clamp default
+    #    current_val = min(current_val, max_pct)
+    #    scenario["allocations"][key] = current_val
+
+    #    with c1:
+    #        scenario["allocations"][key] = st.number_input(
+    #            f"{label} Allocation %",
+    #            min_value=0.0,
+    #            max_value=max_pct,
+    #            step=1.0,
+    #            value=float(current_val),
+    #            disabled=not editable,
+    #            help=f"Max allowed: {max_pct:.2f}%",
+    #        )
+
+    #    with c2:
+    #        scenario["rates"][key] = st.number_input(
+    #            f"{label} Rate %",
+    #            0.0, 20.0,
+    #            step=0.25,
+    #            value=float(scenario["rates"][key]),
+    #            disabled=not editable,
+    #        )
+
+    # ---------- FINAL ENFORCEMENT ----------
+    capped_allocations, surplus_pct = apply_instrument_caps(
+        total_corpus,
+        scenario["allocations"],
+        age
+    )
+
+    # persist capped values
+    scenario["allocations"] = capped_allocations
+
+    if age is not None and age < SCSS_MIN_AGE:
+        st.warning("SCSS available only for age 60+")
+
+    if surplus_pct > 0:
+        st.info(f"{surplus_pct:.2f}% moved to SWP due to scheme limits.")
+
+#    st.markdown("### ✏️ Edit Allocation & Rates")
+
+    # apply caps for display
+#    capped_allocations, surplus_pct = apply_instrument_caps(
+#        total_corpus,
+#        scenario["allocations"],
+#        age
+#    )
+
+#    for key, label in _allocation_fields(country):
+#        c1, c2 = st.columns(2)
+
+#        max_pct = get_allocation_max_pct(key, total_corpus, age)
+
+#        with c1:
+#            val = float(scenario["allocations"].get(key, 0))
+
+#            if val > max_pct:
+#                val = max_pct
+#                scenario["allocations"][key] = val
+
+#            scenario["allocations"][key] = st.number_input(
+#                f"{label} Allocation %",
+#                min_value=0.0,
+#                max_value=float(max_pct),
+#                step=1.0,
+#                value=float(val),
+#                disabled=not editable,
+#                help=f"Max allowed: {max_pct:.2f}%"
+#            )
+
+#        with c2:
+#            scenario["rates"][key] = st.number_input(
+#                f"{label} Rate %",
+#                0.0, 20.0,
+#                step=0.25,
+#                value=float(scenario["rates"][key]),
+#                disabled=not editable,
+#            )
+
+#    if age is not None and age < SCSS_MIN_AGE:
+#        st.warning("SCSS is available only for age 60+. Allocation disabled.")
+
+#    if surplus_pct > 0:
+#        st.info(f"{surplus_pct:.2f}% automatically moved to SWP due to scheme limits.")
+  
+
+    rows = []
+    alloc_total = 0.0
+
+   
+    for key, label in _allocation_fields(country):
+        alloc = float(capped_allocations.get(key, 0))
+        rate = float(scenario["rates"][key])
+
+        allocated_amt = round(total_corpus * alloc / 100, 2)
+        annual_income = round(allocated_amt * rate / 100, 2)
+
+        rows.append({
+            "Instrument": label,
+            "Allocation %": round(alloc, 2),
+            "Rate %": rate,
+            "Allocated Amount": allocated_amt,
+            "Estimated Yearly Income": annual_income,
+        })
+
+        alloc_total += alloc
+    
+     
+    st.dataframe(pd.DataFrame(rows), use_container_width=True)
+
+    if alloc_total != 100:
+        st.warning(f"Allocation totals {alloc_total}%. Recommended: 100%.")
+     
+ 
     st.divider()
 
     # =========================================================
@@ -590,7 +817,16 @@ def render_investment_plan(user_data: dict, user: dict):
     st.subheader("💰  Projections")
     st.metric("Number of Planning Years - ",user_data["GLProjectionYears"]["input"])
     #print("Calculing prrojections")
+    # ensure legal allocation before simulation
+    scenario["allocations"], _ = apply_instrument_caps(
+        total_corpus,
+        scenario["allocations"],
+        age
+    )
+
     result = calculate_projections(user_data, user)
+
+    #result = calculate_projections(user_data, user)
 
     active = result.get("active_result", {})
     projections = active.get("projections", [])

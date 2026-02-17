@@ -580,4 +580,6 @@ def run_simulator(is_guest: bool = False):
     # 9. SAVE USER DATA (ONLY AFTER FULL HYDRATION)
     # ==========================================================
     if not user["is_guest"]:
+        #print(f"Saving user data for '{user['username']}' with keys: {list(user_data.keys())}")
+        #print("session states user data : ", st.session_state.user_data)
         save_user_data(user["username"], st.session_state.user_data)
