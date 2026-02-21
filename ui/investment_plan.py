@@ -477,7 +477,7 @@ def ui_section(title, icon="📊"):
 
 def render_investment_plan(user_data: dict, user: dict):
     #st.header("📊 Income & Investment Strategy")
-    st.header("📊 Income & Investment Strategy 4444 - How Your Money Works for You")
+    st.header("📊 Income & Investment Strategy - How Your Money Works for You")
     st.caption("See how your savings generate income and support your lifestyle.")
 
     # ---------------------------------------------------------
