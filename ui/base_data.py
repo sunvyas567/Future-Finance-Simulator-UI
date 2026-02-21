@@ -1,6 +1,37 @@
 import streamlit as st
 from ui.currency import get_currency
 
+# =========================================================
+# Life Stage Detection
+# =========================================================
+def get_life_stage(age: int) -> str:
+    if age < 35:
+        return "early"
+    elif age < 55:
+        return "mid"
+    else:
+        return "retirement"
+    
+def render_stage_context(stage: str):
+    if stage == "early":
+        st.info(
+            "🌱 **Wealth Building Stage**\n\n"
+            "Capture your current savings and investments. "
+            "Even small amounts matter — this helps project long-term growth."
+        )
+
+    elif stage == "mid":
+        st.info(
+            "📈 **Retirement Building Stage**\n\n"
+            "You are actively building retirement assets. "
+            "Include all long-term investments and retirement accounts."
+        )
+
+    else:
+        st.success(
+            "🏖 **Retirement / Pre-Retirement Stage**\n\n"
+            "This represents your retirement corpus available for income planning."
+        )
 
 # =========================================================
 # Defaults (single source of truth)
@@ -83,8 +114,8 @@ def render_base_data(config, user_data: dict, user: dict):
     currency = get_currency(user_data)
 
     #st.header("📋 Base Information")
-    st.header("👤 About You & Your Retirement Planning")
-    st.caption("Tell us a little about yourself so that your retirement plan can be personalized to your context and needs.")
+    st.header("👤 Define your financial identity and planning horizon.")
+    st.caption("Tell us a little about yourself so that your financial plan can be personalized to your context and needs.")
     st.caption("These details remain constant across all scenarios.")
 
     # -----------------------------------------------------
@@ -158,8 +189,28 @@ def render_base_data(config, user_data: dict, user: dict):
     # -----------------------------------------------------
     #st.subheader("💰 Initial Retirement Corpus")
     #st.caption("Your current retirement savings (include/exclude as needed)")
-    st.subheader("💰 Your Current Savings (Starting Corpus)")
-    st.caption("Savings and investments you already have for retirement. (include/exclude as needed)")
+    #st.subheader("💰 Your Current Savings (Starting Corpus)")
+    #st.caption("Savings and investments you already have for retirement. (include/exclude as needed)")
+
+    # -----------------------------------------------------
+    # Life Stage Context
+    # -----------------------------------------------------
+    age_val = user_data["GLAge"]["input"]
+    stage = get_life_stage(age_val)
+
+    if stage == "early":
+        st.subheader("💰 Your Current Savings & Investments")
+        st.caption("Everything you have saved or invested so far")
+
+    elif stage == "mid":
+        st.subheader("💰 Your Growing Retirement Corpus")
+        st.caption("All assets being built for long-term retirement")
+
+    else:
+        st.subheader("💰 Your Retirement Corpus")
+        st.caption("Assets available to fund retirement")
+
+    render_stage_context(stage)
 
 
     def render_corpus_cards(corpus_config: list):
@@ -229,6 +280,12 @@ def render_base_data(config, user_data: dict, user: dict):
             {"key": "OTHER", "label": "Other Corpus", "icon": "➕"},
         ]
     
+    if stage == "early":
+        st.caption("💡 Tip: Include EPF, savings, mutual funds, and any investments. in Others category")
+
+    if stage == "mid":
+        st.caption("💡 Tip: Include retirement accounts, long-term investments, and pension funds. in Others category")
+
     total = render_corpus_cards(corpus_config)
 
     st.divider()

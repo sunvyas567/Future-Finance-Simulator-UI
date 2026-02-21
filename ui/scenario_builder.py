@@ -44,7 +44,7 @@ def render_scenario_builder(config, user_data, user):
     baseline_data = copy.deepcopy(user_data)
     scenario_fields = get_scenario_fields(config["base_data"])
 
-    print("DEBUG scnario fields", scenario_fields)
+    #print("DEBUG scnario fields", scenario_fields)
     # -----------------------------------
     # Scenario creation UI
     # -----------------------------------

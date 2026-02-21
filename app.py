@@ -40,11 +40,52 @@ if "username" not in st.session_state:
 # -------------------------------------------------------------------
 def render_landing():
     st.title("Visualize Your Financial Future in Minutes")
-    st.markdown(
-        "Plan smarter, account for inflation, and stress-test your retirement "
-        "with multi-year projections."
-    )
-    st.markdown("---")
+   
+#    st.markdown("""
+#    ### 💡 What This Tool Helps You Do
+
+#    - Understand your financial future across different life stages  
+#    - Plan major expenses like education, housing, travel, and retirement  
+#    - Model income, investments, and lifestyle choices  
+#    - Compare scenarios and see long-term impact instantly  
+#    - Stay financially prepared through life transitions  
+#    - Plan smarter, account for inflation, and stress-test your financial future with multi-year projections  #
+
+#    ---
+
+    ### 🔄 Life-Stage Intelligent Planning
+
+#    This simulator automatically adjusts planning logic based on your life stage:
+
+#    🌱 **Early Stage** — build income, assets, and financial stability  
+#    🏡 **Mid Stage** — manage family, major goals, and wealth growth  
+#    🏖 **Retirement Stage** — preserve wealth and manage income streams  
+
+#    ---
+
+#    ### 📊 What Makes This Different?
+
+#    - Scenario-based financial projections  
+#    - Stage-aware expenses and investment logic  
+#    - Country-specific retirement structures  
+#    - Integrated income, expense, and investment modeling  
+#    - Visual financial trajectory forecasting  
+
+#    ---
+
+    ### 📈 Three Scenarios, One Click
+
+#    🟢 **Base Scenario — Balanced Planning**  
+#    A realistic and moderate financial strategy based on stable growth assumptions and disciplined spending.#
+
+#    🟡 **Conservative Scenario — Safety First**  
+#    A cautious approach focused on capital protection, lower risk, and higher financial resilience.
+
+#    🔴 **Aggressive Scenario — Growth Focused**  
+#    A higher-growth strategy that assumes stronger investment performance and a more growth-oriented allocation.
+#    """)
+
+        # ----------
 
     col1, col2, col3 = st.columns(3)
 
@@ -68,6 +109,59 @@ def render_landing():
         if st.button("Login"):
             st.session_state.view = "login"
             st.rerun()
+
+    st.markdown("---")
+
+    #import streamlit as st
+
+    st.set_page_config(layout="wide")
+
+    st.title("Financial Life Planner")
+
+    # ---------- 2 x 2 GRID ----------
+    row1_col1, row1_col2 = st.columns(2)
+    row2_col1, row2_col2 = st.columns(2)
+
+    # ---- Section 1 ----
+    with row1_col1:
+        st.markdown("""
+        ### 💡 What This Tool Helps You Do
+        - Understand financial future across life stages
+        - Plan major expenses and goals
+        - Model income and investments
+        - Compare long-term scenarios
+        """)
+
+    # ---- Section 2 ----
+    with row1_col2:
+        st.markdown("""
+        ### 🔄 Life-Stage Intelligent Planning
+        🌱 Early — Build income & assets  
+        🏡 Mid — Manage family & wealth  
+        🏖 Retirement — Preserve & draw income
+        """)
+
+    # ---- Section 3 ----
+    with row2_col1:
+        st.markdown("""
+        ### 📊 What Makes This Different?
+        - Scenario-based projections
+        - Stage-aware planning logic
+        - Integrated income + expense modeling
+        - Financial trajectory forecasting
+        """)
+
+    # ---- Section 4 ----
+    with row2_col2:
+        st.markdown("""
+        ### 📈 Three Scenarios
+        🟢 Base — Balanced strategy  
+        🟡 Conservative — Safety focused  
+        🔴 Aggressive — Growth focused
+        """)
+
+    st.markdown("---")
+
 
 
 def render_demo():

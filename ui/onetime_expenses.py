@@ -5,6 +5,53 @@ import pandas as pd
 import plotly.express as px
 from ui.currency import get_currency
 
+# -------------------------------------------------
+# Life stage helper
+# -------------------------------------------------
+def _get_life_stage(user_data):
+    age = user_data.get("GLAge", {}).get("input", 35)
+
+    if age < 35:
+        return "early"
+    elif age < 55:
+        return "mid"
+    else:
+        return "retirement"
+def _apply_stage_rules(stage, key, label):
+    rules = STAGE_EXPENSE_RULES.get(stage, {})
+
+    if key in rules.get("hide", []):
+        return None  # hidden
+
+    label = rules.get("rename", {}).get(key, label)
+    return label
+
+# -------------------------------------------------
+# Stage visibility rules (UI only — data preserved)
+# -------------------------------------------------
+STAGE_EXPENSE_RULES = {
+
+    "early": {
+        # hide things that don’t make sense yet
+        "hide": [
+            "OTMarriage"
+        ],
+        # rename if needed
+        "rename": {
+            "OTHouseRenovation": "Future Education Planning"
+        }
+    },
+
+    "mid": {
+        "hide": [],
+        "rename": {}
+    },
+
+    "retirement": {
+        "hide": [],
+        "rename": {}
+    }
+}
 
 FIELD_ICONS = {
     "LocalKidsEducation": "🎓",
@@ -60,6 +107,29 @@ def render_onetime_expenses(config, user_data, user):
     st.subheader("🏷 Big One-Time Costs")
 
     # -------------------------------------------------
+    # Life stage context
+    # -------------------------------------------------
+    stage = _get_life_stage(user_data)
+
+    if stage == "early":
+        st.info(
+            "🌱 Plan major life milestones like education, vehicle purchase, or travel."
+        )
+        st.caption("💡 Common: higher education, vehicle purchase, travel, career upgrade")
+
+    elif stage == "mid":
+        st.info(
+            "👨‍👩‍👧 Plan family goals like children education, home purchase, or life events."
+        )
+        st.caption("💡 Common: children education, home renovation, marriage")
+
+    else:
+        st.success(
+            "🏖 Plan retirement lifestyle goals like travel, healthcare, or legacy gifting."
+        )
+        st.caption("💡 Common: medical reserve, bucket-list travel, wealth transfer")
+
+    # -------------------------------------------------
     # Ensure country-scoped storage
     # -------------------------------------------------
     user_data.setdefault("onetime_expenses", {})
@@ -67,6 +137,13 @@ def render_onetime_expenses(config, user_data, user):
     expenses = user_data["onetime_expenses"][country]
 
     #print("One-time expenses UI: - 1", expenses)
+
+    STAGE_PRIORITY = {
+        "early": ["Education", "Vehicle", "Travel"],
+        "mid": ["Children", "House", "Marriage", "Property"],
+        "retirement": ["Medical", "Healthcare", "Travel"]
+    }
+    priority_keywords = STAGE_PRIORITY.get(stage, [])
 
     # -------------------------------------------------
     # Input fields (REDESIGNED CARD UI)
@@ -76,13 +153,31 @@ def render_onetime_expenses(config, user_data, user):
         if "Field Default Value" in f and "Field Description" in f
     ]
 
-    cols = st.columns(2)
+    #cols = st.columns(2)
+    visible_fields = []
 
-    for idx, field in enumerate(input_fields):
+    for field in input_fields:
+        key = field["Field Name"]
+        label = field["Field Description"]
+
+        stage_label = _apply_stage_rules(stage, key, label)
+        if stage_label is None:
+            expenses[key] = {"input": 0.0}
+            continue
+
+        field["__stage_label"] = stage_label
+        visible_fields.append(field)
+
+    cols = st.columns(2)
+    print("Visible fields for one-time expenses:", [f["Field Name"] for f in visible_fields])
+    for idx, field in enumerate(visible_fields):
+    #for idx, field in enumerate(input_fields):
         col = cols[idx % 2]
 
         key = field["Field Name"]
-        label = field["Field Description"]
+        #label = field["__stage_label"]
+        #label = field["Field Description"]
+        label = field.get("__stage_label", field["Field Description"])
         default = float(field.get("Field Default Value", 0))
         icon = FIELD_ICONS.get(key, "💸")
 
@@ -97,7 +192,15 @@ def render_onetime_expenses(config, user_data, user):
 
         with col:
             with st.container(border=True):
-                st.markdown(f"### {icon} {label}")
+                base_label = field["Field Description"]
+
+                if any(k.lower() in base_label.lower() for k in priority_keywords):
+                #if any(k.lower() in label.lower() for k in priority_keywords):
+                    st.markdown(f"### ⭐ {icon} {label}")
+                else:
+                    st.markdown(f"### {icon} {label}")
+
+                #st.markdown(f"### {icon} {label}")
 
                 include = st.checkbox(
                     "Include",
@@ -118,30 +221,6 @@ def render_onetime_expenses(config, user_data, user):
                     expenses[key] = {
                         "input": value if include else 0.0
                     }
-
-    # -------------------------------------------------
-    # Input fields only
-    # -------------------------------------------------
-    #input_fields = [
-    #    f for f in config
-    #    if "Field Default Value" in f and "Field Description" in f
-    #]
-
-    #for field in input_fields:
-    #    key = field["Field Name"]
-    #    label = field["Field Description"]
-    #    default = field.get("Field Default Value", 0)
-
-    #    value = expenses.get(key, {}).get("input", default)
-
-    #    value = st.number_input(
-    #        f"{FIELD_ICONS.get(key, '💸')} {label} ({currency})",
-    #        min_value=0.0,
-    #        value=float(value),
-    #        step=1000.0,
-    #        disabled=is_guest or not is_premium,
-    #        key=f"onetime_{country}_{key}",
-    #    )
 
         expenses[key] = {"input": value}
 
@@ -201,7 +280,7 @@ def render_onetime_expenses(config, user_data, user):
 
     rows = []
 
-    for field in input_fields:
+    for field in visible_fields:
         name = field.get("Field Name")
         label = field.get("Field Description")
 

@@ -221,7 +221,377 @@ from playwright.async_api import async_playwright
 # =========================================================
 # HTML TEMPLATE BUILDER
 # =========================================================
+import datetime
+
+
+
 def build_financial_html(
+    username,
+    base_context,
+    projection_df,
+    currency,
+    retirement_score=None,
+    score_breakdown=None,
+    advisor_advice=None,
+    income_expense_chart_html="",
+    corpus_chart_html="",
+    tax_chart_html="",
+    scenario_comparison_df=None,
+    onetime_chart_html="",
+    recurring_chart_html="",
+    expense_growth_chart_html="",
+):
+
+    meta = base_context.get("_meta", {})
+    country = meta.get("country_label", "")
+    scenario = meta.get("scenario", "")
+    today = datetime.date.today().strftime("%d %B %Y")
+
+    y1 = projection_df.iloc[0]
+    final = projection_df.iloc[-1]
+
+    # -----------------------------------------------------
+    # Scenario table HTML
+    # -----------------------------------------------------
+    scenario_table_html = ""
+    if scenario_comparison_df is not None and not scenario_comparison_df.empty:
+        scenario_table_html = scenario_comparison_df.to_html(
+            index=False, classes="table", border=0
+        )
+
+    # -----------------------------------------------------
+    # Score breakdown table
+    # -----------------------------------------------------
+    score_table = ""
+    if score_breakdown:
+        rows = "".join(
+            f"<tr><td>{k}</td><td>{v}</td></tr>"
+            for k, v in score_breakdown.items()
+        )
+        score_table = f"""
+        <table class="table small">
+        <tr><th>Metric</th><th>Score</th></tr>
+        {rows}
+        </table>
+        """
+
+    # -----------------------------------------------------
+    # Advisor section
+    # -----------------------------------------------------
+    advisor_html = ""
+    if advisor_advice:
+        advisor_html = f"""
+        <h2>Advisor Insights & Recommendations</h2>
+        <div class="advisor-box">
+        {advisor_advice}
+        </div>
+        """
+
+    # =====================================================
+    # HTML DOCUMENT
+    # =====================================================
+    html = f"""
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+
+body {{
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial;
+    color:#111827;
+    line-height:1.6;
+}}
+
+h1,h2,h3 {{
+    color:#1f2937;
+}}
+
+p {{
+    color:#374151;
+}}
+
+.section {{
+    margin-top:35px;
+}}
+
+.section-desc {{
+    color:#6b7280;
+    font-size:14px;
+    margin-bottom:12px;
+}}
+
+.page-break {{
+    page-break-before: always;
+}}
+
+.table {{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:12px;
+}}
+
+.table th {{
+    background:#f3f4f6;
+    padding:8px;
+    text-align:left;
+}}
+
+.table td {{
+    padding:8px;
+    border-bottom:1px solid #e5e7eb;
+}}
+
+.small td {{
+    padding:5px;
+}}
+
+.highlight {{
+    background:#eef2ff;
+    padding:14px;
+    border-left:5px solid #6366f1;
+    border-radius:6px;
+}}
+
+.advisor-box {{
+    background:#f0fdf4;
+    padding:18px;
+    border-left:5px solid #22c55e;
+    border-radius:6px;
+}}
+
+.score-card {{
+    background:#eef2ff;
+    padding:25px;
+    border-radius:10px;
+    text-align:center;
+    font-size:34px;
+    font-weight:bold;
+    margin-top:20px;
+}}
+
+.cover-page {{
+    text-align:center;
+    margin-top:140px;
+}}
+
+.cover-page h1 {{
+    font-size:38px;
+}}
+
+.cover-score {{
+    font-size:72px;
+    font-weight:bold;
+    color:#6366f1;
+    margin-top:40px;
+}}
+
+.chart-block {{
+    width: 100%;
+    margin: 20px 0 40px 0;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}}
+
+.plotly-graph-div {{
+    margin: auto !important;
+}}
+
+@media print {{
+
+    .chart-block {{
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }}
+
+    .page-break {{
+        page-break-before: always;
+    }}
+
+}}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================================================= -->
+<!-- COVER PAGE -->
+<!-- ================================================= -->
+
+<div class="cover-page">
+    <h1>Financial Life Planning Report</h1>
+    <p>Future Finance Simulator</p>
+
+    <p><b>Client:</b> {username}</p>
+    <p><b>Country:</b> {country}</p>
+    <p><b>Scenario:</b> {scenario}</p>
+    <p><b>Date:</b> {today}</p>
+
+    {f'<div class="cover-score">{retirement_score}/100</div>' if retirement_score else ""}
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================================================= -->
+<!-- EXECUTIVE SUMMARY -->
+<!-- ================================================= -->
+
+<h2>Executive Summary</h2>
+
+<p>
+This report evaluates your long-term financial outlook by projecting income,
+expenses, investment growth, taxation, and savings sustainability under
+structured economic assumptions.
+</p>
+
+<div class="highlight">
+Net income after tax (Year 1): {currency}{y1['NetIncomeAfterTax']:,.0f}
+</div>
+
+<p>
+Ending projected corpus: <b>{currency}{final['EndingCorpus']:,.0f}</b>
+</p>
+
+<!-- ================================================= -->
+<!-- FINANCIAL SCORE -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Financial Health Score</h2>
+
+{f'<div class="score-card">{retirement_score} / 100</div>' if retirement_score else ""}
+
+{score_table}
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================================================= -->
+<!-- SCENARIO COMPARISON -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Scenario Comparison</h2>
+<p class="section-desc">
+Comparison of long-term financial outcomes across planning strategies.
+</p>
+{scenario_table_html}
+</div>
+
+<!-- ================================================= -->
+<!-- INCOME VS EXPENSE -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Income vs Expense Projection</h2>
+<p class="section-desc">
+Tracks whether projected income remains sufficient to meet rising expenses.
+</p>
+<div class="chart-block">
+    <h3>Income vs Expenses</h3>
+    { income_expense_chart_html }
+</div>
+</div>
+
+<div class="section">
+<h2>Expense Growth Over Time</h2>
+<p class="section-desc">
+Illustrates how essential and lifestyle expenses grow over time.
+</p>
+<div class="chart-block">
+    <h3>Expenses Growth Over Time</h3>
+    { expense_growth_chart_html }
+</div>
+
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================================================= -->
+<!-- INVESTMENT GROWTH -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Investment & Corpus Growth</h2>
+<p class="section-desc">
+Shows projected long-term change in investment corpus.
+</p>
+<div class="chart-block">
+    <h3>Investment & Corpus Growth</h3>
+    { corpus_chart_html }
+</div>
+</div>
+
+<!-- ================================================= -->
+<!-- EXPENSE STRUCTURE -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Expense Structure</h2>
+
+<h3>One-Time Expenses</h3>
+<div class="chart-block">
+    <h3>One-Time Expenses</h3>
+    { onetime_chart_html}
+</div>
+
+<h3>Recurring Expenses (Year 1)</h3>
+<div class="chart-block">
+    <h3>Recurring Expenses</h3>
+    { recurring_chart_html}
+</div>
+</div>
+
+<!-- ================================================= -->
+<!-- TAX IMPACT -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Tax Impact</h2>
+<p class="section-desc">
+Illustrates tax outflows and net income over time.
+</p>
+<div class="chart-block">
+    <h3>Tax Impact Over Time</h3>
+    { tax_chart_html }
+</div>
+</div>
+
+<!-- ================================================= -->
+<!-- PROJECTION TABLE -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Yearly Projection Table</h2>
+{projection_df.to_html(index=False, classes="table")}
+</div>
+
+{advisor_html}
+
+<!-- ================================================= -->
+<!-- ASSUMPTIONS -->
+<!-- ================================================= -->
+
+<div class="section">
+<h2>Projection Assumptions</h2>
+<ul>
+<li>Inflation adjusted annually</li>
+<li>Investment returns based on selected scenario</li>
+<li>Expenses grow with inflation</li>
+<li>Taxes computed using applicable rules</li>
+</ul>
+</div>
+
+</body>
+</html>
+"""
+    return html
+
+def build_financial_html_old2(
     username: str,
     base_context: dict,
     projection_df: pd.DataFrame,
@@ -233,6 +603,9 @@ def build_financial_html(
     corpus_chart_html: str = "",
     tax_chart_html: str = "",
     scenario_comparison_df: pd.DataFrame | None = None,
+    onetime_chart_html: str = "",
+    recurring_chart_html: str = "",
+    expense_growth_chart_html: str = "",
 ):
 
     import datetime
@@ -319,7 +692,7 @@ def build_financial_html(
 <style>
 @page {{
     size: A4;
-    margin: 20mm;
+    margin: 25mm 20mm 20mm 20mm;
 }}
 
 html, body {{
@@ -417,10 +790,12 @@ td {{
 div {{
     overflow: visible !important;
 }}
+
 </style>
 </head>
 
 <body>
+
 
 <h1>Retirement Financial Summary</h1>
 
@@ -450,9 +825,18 @@ div {{
 
 <h2>Visual Overview</h2>
 <div class="chart-page"></div>
+<h3>Tax Impact</h3>
 <div class="chart">{tax_chart_html}</div>
+<h3>Income vs Expenses</h3>
 <div class="chart">{income_expense_chart_html}</div>
+<h3>Corpus Growth</h3>
 <div class="chart">{corpus_chart_html}</div>
+<h3>One-Time Expenses Distribution</h3>
+<div class="chart">{onetime_chart_html}</div>
+<h3>Recurring Expenses (Year 1)</h3>
+<div class="chart">{recurring_chart_html}</div>
+<h3>Expense Growth Over Time</h3>
+<div class="chart">{expense_growth_chart_html}</div>
 
 <h2>Projection Snapshot</h2>
 <table>
@@ -791,7 +1175,31 @@ async def generate_pdf(html_file, output_pdf):
             format="A4",
             print_background=True,
             prefer_css_page_size=True,
-            margin={"top":"15mm","bottom":"15mm","left":"10mm","right":"10mm"}
+            display_header_footer=True,
+            margin={"top":"15mm","bottom":"15mm","left":"10mm","right":"10mm"},
+            header_template="""
+            <div style="
+                width:100%;
+                font-size:20px;
+                padding:0 20px;
+                color:#6b7280;
+                text-align:center;
+                border-bottom:1px solid #e5e7eb;
+            ">
+                Retirement Financial Summary · Future Finance Simulator
+            </div>
+            """,
+            footer_template="""
+            <div style="
+                width:100%;
+                font-size:15px;
+                padding:0 20px;
+                color:#9ca3af;
+                text-align:right;
+            ">
+                Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+            </div>
+            """
         )
         
         await browser.close()
@@ -869,14 +1277,40 @@ def _html_to_pdf_bytes(html: str) -> bytes:
             format="A4",
             print_background=True,
             prefer_css_page_size=True,
+            display_header_footer=True,
             margin={
                 "top": "20mm",
                 "bottom": "20mm",
                 "left": "15mm",
                 "right": "15mm",
-            }
-        )
+            },
 
+            header_template="""
+            <div style="
+                width:100%;
+                font-size:20px;
+                padding:0 20px;
+                color:#6b7280;
+                text-align:center;
+                border-bottom:1px solid #e5e7eb;
+            ">
+                Retirement Financial Summary · Future Finance Simulator
+            </div>
+            """,
+
+            footer_template="""
+            <div style="
+                width:100%;
+                font-size:15px;
+                padding:0 20px;
+                color:#9ca3af;
+                text-align:right;
+            ">
+                Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+            </div>
+            """
+        )
+      
         browser.close()
         return pdf_bytes
 
@@ -929,7 +1363,11 @@ def generate_financial_summary_pdf_playwright(
     corpus_chart_html="",
     tax_chart_html="",     # ⭐ NEW
     scenario_comparison_df=None,
+    onetime_chart_html: str = "",
+    recurring_chart_html: str = "",
+    expense_growth_chart_html: str = "",
 ):
+    print("DEBUG 2: Building HTML for PDF...")
     html = build_financial_html(
         username,
         base_context,
@@ -942,6 +1380,9 @@ def generate_financial_summary_pdf_playwright(
         corpus_chart_html=corpus_chart_html,
         tax_chart_html=tax_chart_html,
         scenario_comparison_df=scenario_comparison_df,
+        onetime_chart_html=onetime_chart_html,
+        recurring_chart_html=recurring_chart_html,
+        expense_growth_chart_html=expense_growth_chart_html,
     )
     #with open("debug.html", "w") as f:
     #    f.write(html)
@@ -1069,7 +1510,7 @@ def generate_financial_summary_pdf_weasyprint(
     <style>
 
     @page {{ margin: 25mm; }}
-
+   
     body {{
         font-family: Arial, sans-serif;
         color:#374151;

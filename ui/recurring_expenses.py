@@ -7,6 +7,18 @@ import plotly.express as px
 from ui.currency import get_currency
 from ui.expense_templates import EXPENSE_TEMPLATES
 
+# -------------------------------------------------
+# Life stage helper
+# -------------------------------------------------
+def _get_life_stage(user_data):
+    age = user_data.get("GLAge", {}).get("input", 35)
+
+    if age < 35:
+        return "early"
+    elif age < 55:
+        return "mid"
+    else:
+        return "retirement"
 
 # =========================================================
 # Helpers
@@ -41,6 +53,23 @@ def render_recurring_expenses(config, user_data, user):
     country = user_data.get("country", "IN")
 
     st.subheader("🔁 Monthly Living Expenses")
+
+    # --------------------------------------------------
+    # Life stage context
+    # --------------------------------------------------
+    stage = _get_life_stage(user_data)
+
+    if stage == "early":
+        st.info("🌱 Capture your living costs and lifestyle spending.")
+        st.caption("💡 Rent, food, transport, subscriptions")
+
+    elif stage == "mid":
+        st.info("👨‍👩‍👧 Capture full household expenses and dependents.")
+        st.caption("💡 Household costs, school fees, EMIs, insurance")
+
+    else:
+        st.success("🏖 Capture retirement living and healthcare expenses.")
+        st.caption("💡 Healthcare, assisted living, lifestyle maintenance")
 
     # --------------------------------------------------
     # Storage (country-scoped)
@@ -86,6 +115,13 @@ def render_recurring_expenses(config, user_data, user):
 
     st.divider()
     
+    STAGE_PRIORITY = {
+        "early": ["Rent", "Food", "Transport", "Lifestyle"],
+        "mid": ["House", "Education", "Insurance", "Family"],
+        "retirement": ["Medical", "Healthcare"]
+    }
+    priority_keywords = STAGE_PRIORITY.get(stage, [])
+
     # --------------------------------------------------
     # Render fields (REDESIGNED CARD UI)
     # --------------------------------------------------
@@ -109,7 +145,12 @@ def render_recurring_expenses(config, user_data, user):
 
         with col:
             with st.container(border=True):
-                st.markdown(f"### 🔁 {label}")
+                #st.markdown(f"### 🔁 {label}")
+                if any(k.lower() in label.lower() for k in priority_keywords):
+                    st.markdown(f"### ⭐ 🔁 {label}")
+                else:
+                    st.markdown(f"### 🔁 {label}")
+
 
                 include = st.checkbox(
                     "Include",

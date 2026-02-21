@@ -41,6 +41,8 @@ def get_authenticator():
 
         users_config = get_users_for_auth()
 
+        #for username, data in users_config["credentials"]["usernames"].items():
+            #print("DEBUG USER:", username, "PASSWORD:", data.get("password"))
       #  _authenticator = stauth.Authenticate(
         return stauth.Authenticate(
             users_config["credentials"],

@@ -197,6 +197,12 @@ def apply_defaults_from_config(
             key = fname.replace("INCOME_", "")
             base_scenario["income_sources"].setdefault(key, default)
         #print("INVEST FANME value", default)
+    
+        
+    for sc in plan.get("scenarios", {}).values():
+        sc["_engine_synced"] = False
+
+    print("After applying defaults, user data is:", user_data)
     # ---------------------------------------------------------
     # MARK INITIALIZED (important!)
     # ---------------------------------------------------------
@@ -444,10 +450,10 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     pages = [
         "Welcome",
-        "Your Profile",
-        "Your Expenses",
-        "Income & Investment Plan",
-        "Retirement Outlook Report",
+        "Your Financial Profile",
+        "Your Financial Commitments & Expenses",
+        "Your Income Sources & Investment Strategy",
+        "Your Financial Outlook Report",
     ]
 
     if not user["is_guest"] and not user["is_premium"]:
@@ -474,7 +480,7 @@ def run_simulator(is_guest: bool = False):
     projections = None
     base_context = None
 
-    if page == "Retirement Outlook Report":
+    if page == "Your Financial Outlook Report":
         try:
             from ui.investment_plan import ensure_scenarios
             # -------------------------------------------------
@@ -509,6 +515,8 @@ def run_simulator(is_guest: bool = False):
         if isinstance(cached, dict):
             projections = cached.get("projections")
             base_context = cached.get("base_context")
+            life_stage = cached.get("life_stage")
+            stage_metrics = cached.get("stage_metrics")
 
     # ==========================================================
     # 7. CURRENCY (DERIVED)
@@ -523,22 +531,84 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     if page == "Welcome":
         #st.header("About the App")
-        st.title("Plan Your Retirement With Confidence")
+        st.title("Plan Your Financial Future With Confidence")
         st.subheader("A simple, powerful tool to understand your future income, expenses, and savings.")
-        st.markdown(
-        """
-        Retirement planning doesn’t have to be confusing.
+        
+        st.markdown("""
+        ## 👋 Welcome to Your Smart Financial Planner
 
-        This planner helps you:
-        - 📊 Estimate how long your savings will last  
-        - 💸 Understand your yearly expenses  
-        - 📈 Compare different investment strategies  
-        - 🧾 See the impact of taxes  
-        - 🔍 Visualize your future clearly  
+        Plan smarter. Invest better. Retire with confidence.
 
-        In just a few minutes, you can see whether your current savings and income plan will support the lifestyle you want.
-        """
-        )
+        """)
+
+        st.markdown("### 🎯 What you can do here")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("""
+            ### 💰 Money & Expenses
+            - Track lifestyle costs  
+            - Plan major life goals  
+            - Estimate yearly spending  
+            """)
+
+        with col2:
+            st.markdown("""
+            ### 📈 Investments & Growth
+            - Choose investment mix  
+            - Compare strategies  
+            - See long-term projections  
+            """)
+
+        with col3:
+            st.markdown("""
+            ### 🏖 Finance Readiness
+            - Check income sustainability  
+            - Estimate corpus longevity  
+            - Visualize future wealth  
+            """)
+
+        st.markdown("---")
+
+
+        st.markdown("### 🔮 Explore Different Financial Futures")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("""
+            🟢 **Base Scenario**  
+            Balanced growth with realistic assumptions.
+            """)
+
+        with col2:
+            st.markdown("""
+            🟡 **Conservative Scenario**  
+            Stability first. Lower risk approach.
+            """)
+
+        with col3:
+            st.markdown("""
+            🔴 **Aggressive Scenario**  
+            Higher growth with higher risk.
+            """)
+
+        st.markdown("---")
+
+
+        st.markdown("""
+        ### 🚀 Why people love this simulator
+
+        ✔ Simple and intuitive  
+        ✔ Adapts to your life stage  
+        ✔ Visual projections — not guesswork  
+        ✔ Multi-scenario planning in seconds  
+
+        """)
+
+        st.success("💡 In just a few minutes, see if your future lifestyle is financially secure.")
+
         
         st.info(
             "Designed for everyday individuals — no financial background required."
@@ -547,21 +617,21 @@ def run_simulator(is_guest: bool = False):
             "👉 Start by entering your details in 'Your Profile' to see your personalized retirement outlook."
         )
 
-        st.markdown(config["about"])
+    #    st.markdown(config["about"])
 
-    elif page == "Your Profile":
+    elif page == "Your Financial Profile":
         from ui.base_data import render_base_data
         render_base_data(config["base_data"], user_data, user)
 
-    elif page == "Your Expenses":
+    elif page == "Your Financial Commitments & Expenses":
         from ui.expenses import render_expenses
         render_expenses(config=config, user_data=user_data, user=user)
 
-    elif page == "Income & Investment Plan":
+    elif page == "Your Income Sources & Investment Strategy":
         from ui.investment_plan import render_investment_plan
         render_investment_plan(user_data=user_data, user=user)
 
-    elif page == "Retirement Outlook Report":
+    elif page == "Your Financial Outlook Report":
         from ui.summary import render_summary
         if not projections or not base_context:
             st.warning("Please complete inputs to view summary.")
@@ -570,7 +640,9 @@ def run_simulator(is_guest: bool = False):
             projections=projections,
             user_data=user_data,
             user=user,
-            base_context=base_context
+            base_context=base_context,
+            life_stage=result["life_stage"],
+            stage_metrics=result["life_stage_metrics"]
         )
 
     elif page == "Upgrade":
