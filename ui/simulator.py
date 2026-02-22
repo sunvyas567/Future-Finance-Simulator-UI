@@ -202,7 +202,7 @@ def apply_defaults_from_config(
     for sc in plan.get("scenarios", {}).values():
         sc["_engine_synced"] = False
 
-    print("After applying defaults, user data is:", user_data)
+    #print("After applying defaults, user data is:", user_data)
     # ---------------------------------------------------------
     # MARK INITIALIZED (important!)
     # ---------------------------------------------------------

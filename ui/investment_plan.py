@@ -7,7 +7,7 @@ import copy
 
 from services.api_client import calculate_projections
 from ui import scenario
-from ui import scenario
+#from ui import scenario
 from ui.currency import get_currency
 from ui.expense_summary import render_expense_summary
 
@@ -522,18 +522,18 @@ def render_investment_plan(user_data: dict, user: dict):
     # ---------------------------------------------------------
     # Ensure investment_plan structure (SAFE & PERSISTENT)
     # ---------------------------------------------------------
-    user_data.setdefault("investment_plan", {})
-    plan = user_data["investment_plan"]
+    #user_data.setdefault("investment_plan", {})
+    #plan = user_data["investment_plan"]
 
-    active = plan.get("active_scenario", "Base")
+    #active = plan.get("active_scenario", "Base")
 
 
     # ensure exists
-    if active not in scenarios:
-        scenarios[active] = {}
+    #if active not in scenarios:
+    #    scenarios[active] = {}
 
     # active scenario object
-    scenario = scenarios[active]
+    #scenario = scenarios[active]
 
     #print("scenario at start of render:", scenario)
     # Default scenario name
@@ -547,9 +547,17 @@ def render_investment_plan(user_data: dict, user: dict):
     #scenario = scenarios[scenario_name]
 
 
-    ensure_scenarios(plan, country)
+    #ensure_scenarios(plan, country)
     #plan.setdefault("active_scenario", "Base")
     #plan.setdefault("scenarios", {})
+
+    user_data.setdefault("investment_plan", {})
+    plan = user_data["investment_plan"]
+
+    ensure_scenarios(plan, country)
+
+    active = plan.get("active_scenario", "Base")
+    scenario = plan["scenarios"][active]
 
     # Ensure Base exists
     #if "Base" not in plan["scenarios"]:
@@ -579,6 +587,9 @@ def render_investment_plan(user_data: dict, user: dict):
             plan["scenarios"]["Aggressive"] = _derive_scenario(
                 base, "aggressive"
             )
+    else:
+        print("Iam in guest mode, skipping auto-creation of Conservative and Aggressive scenarios")
+        base = plan["scenarios"]["Base"] # Fix for Guest login ket error withdrawal
 
 
     editable = not is_guest

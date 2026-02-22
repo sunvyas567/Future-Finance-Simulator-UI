@@ -374,6 +374,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         fig_ot.update_layout(
             showlegend=True,
             legend=dict(
+                font=dict(color="black"),
                 orientation="h",
                 yanchor="bottom",
                 y=-0.1,
@@ -383,6 +384,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             font=dict(color="#111827"),   # force visible text
             paper_bgcolor="white",
             plot_bgcolor="white",
+            
             template="plotly_white",
         )
         #fig_ot.update_layout(
@@ -394,8 +396,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         #                font=dict(size=12)
         #            ),
         #        )
-        fig_ot = style_chart_for_pdf(fig_ot)
-        onetime_chart_html = fig_ot.to_html(full_html=False, include_plotlyjs=False)
+        
     
     recurring = user_data.get("recurring_expenses", {}).get(country, {})
 
@@ -419,6 +420,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             showlegend=True,
             legend=dict(
                 orientation="v",
+                font=dict(color="black"),
                 #yanchor="bottom",
                 #y=-0.2,
                 #xanchor="center",
@@ -438,8 +440,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         #                font=dict(size=12)
         #            ),
         #        )
-        fig_rec = style_chart_for_pdf(fig_rec)
-        recurring_chart_html = fig_rec.to_html(full_html=False, include_plotlyjs=False)
+        
 
     expense_growth_chart_html = ""
 
@@ -462,16 +463,18 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
                     legend_title="Expense Growth Over Time",
                 )
         
-        fig_exp_growth = style_chart_for_pdf(fig_exp_growth)
-
+       # Expense breakdown charts (country-safe)
+    fig_ot = style_chart_for_pdf(fig_ot)
+    onetime_chart_html = fig_ot.to_html(full_html=False, include_plotlyjs=False)
+    fig_rec = style_chart_for_pdf(fig_rec)
+    recurring_chart_html = fig_rec.to_html(full_html=False, include_plotlyjs=False)
+    fig_exp_growth = style_chart_for_pdf(fig_exp_growth)
     fig_ie = style_chart_for_pdf(fig_ie)
     fig_corpus = style_chart_for_pdf(fig_corpus)
     fig_tax = style_chart_for_pdf(fig_tax)
     income_expense_chart_html = fig_ie.to_html(full_html=False, include_plotlyjs=False)
     corpus_chart_html = fig_corpus.to_html(full_html=False, include_plotlyjs=False)
     tax_chart_html = fig_tax.to_html(full_html=False, include_plotlyjs=False)
-
-       # Expense breakdown charts (country-safe)
 
     with section("💸 Expense Structure", "Where your money goes"):
     
@@ -487,6 +490,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
 
         if not df.empty:
             st.plotly_chart(fig_exp_growth, use_container_width=True)
+
+   
 
     with section("🔀 Scenario Comparison", "Compare financial outcomes"):
 
