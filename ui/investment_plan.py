@@ -1212,7 +1212,7 @@ def render_investment_plan(user_data: dict, user: dict):
                 label,
                 min_value=float(0),
                 max_value=float(100),
-                value=float(st.session_state.alloc_state.get(key, 0.0)),
+                #value=float(st.session_state.alloc_state.get(key, 0.0)),
                 step=float(1),
                 key=f"alloc_{key}",
                 disabled=disabled,
