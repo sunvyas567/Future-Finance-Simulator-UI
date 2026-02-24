@@ -32,6 +32,8 @@ def render_scenario_builder(config, user_data, user):
         st.info("Upgrade to Premium to create scenarios.")
         return
 
+    is_mobile = st.session_state.get("is_mobile", False)
+
     # -----------------------------------
     # Scenario storage
     # -----------------------------------
@@ -48,7 +50,9 @@ def render_scenario_builder(config, user_data, user):
     # -----------------------------------
     # Scenario creation UI
     # -----------------------------------
-    with st.expander("➕ Create New Scenario", expanded=True):
+    #with st.expander("➕ Create New Scenario", expanded=True):
+    with st.expander("➕ Create New Scenario", expanded=not is_mobile):
+
         scenario_name = st.text_input("Scenario Name", "High Inflation Scenario")
 
         scenario_diff = {}
@@ -127,7 +131,8 @@ def render_scenario_builder(config, user_data, user):
             "Baseline Income": "Total Income",
             "Scenario Income": "Total Expenses"  # reuse chart
         }))
-
+        height = 320 if is_mobile else 500
+        fig.update_layout(height=height)
         st.plotly_chart(fig, use_container_width=True)
 
         # -------------------------------------------------

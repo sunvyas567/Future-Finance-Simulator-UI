@@ -48,10 +48,14 @@ def render_expenses(config, user_data, user):
     user_data.setdefault("onetime_expenses", {})
     user_data.setdefault("recurring_expenses", {})
 
+    is_mobile = st.session_state.get("is_mobile", False)
+
     # -------------------------------
     # One-Time Expenses Section
     # -------------------------------
-    with st.expander("🏷 Big One-Time Costs", expanded=True):
+    #with st.expander("🏷 Big One-Time Costs", expanded=True):
+    with st.expander("I🏷 Big One-Time Costs", expanded=not is_mobile):
+
         render_onetime_expenses(
             config=config["onetime_expenses"],
             user_data=user_data,
@@ -64,7 +68,9 @@ def render_expenses(config, user_data, user):
     # Recurring Expenses Section
     # -------------------------------
     #print("user data passed to recurring expenses: KKKK", user_data)
-    with st.expander("🔁 Monthly Living Costs", expanded=True):
+    #with st.expander("🔁 Monthly Living Costs", expanded=True):
+    with st.expander("🔁 Monthly Living Costs", expanded=not is_mobile):
+
         render_recurring_expenses(
             config=config["recurring_expenses"],
             user_data=user_data,
@@ -229,6 +235,9 @@ def render_expenses(config, user_data, user):
                     template="plotly_white",
                     legend_title="Expense Type",
                 )
+                height = 320 if is_mobile else 500
+                fig_expense_growth.update_layout(height=height)
+                #st.plotly_chart(fig, use_container_width=True)
 
                 st.plotly_chart(fig_expense_growth, use_container_width=True)
 

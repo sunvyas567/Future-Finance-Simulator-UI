@@ -6,6 +6,23 @@ import streamlit as st
 
 import subprocess, os
 
+#import streamlit as st
+
+# Simple mobile detection using query params fallback
+is_mobile = st.session_state.get("is_mobile", False)
+
+st.markdown("""
+<script>
+const isMobile = window.innerWidth < 768;
+window.parent.postMessage({
+  type: "streamlit:setComponentValue",
+  key: "is_mobile",
+  value: isMobile
+}, "*");
+</script>
+""", unsafe_allow_html=True)
+
+
 if not os.path.exists("/home/appuser/.cache/ms-playwright"):
     subprocess.run(["playwright", "install", "chromium"], check=True)
 
@@ -115,6 +132,28 @@ def render_landing():
     #import streamlit as st
 
     st.set_page_config(layout="wide")
+
+    st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    is_mobile = st.session_state.get("is_mobile", False)
+
+    if is_mobile:
+        st.markdown("""
+        <style>
+        html, body {
+            font-size: 14px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
     st.title("Financial Life Planner")
 

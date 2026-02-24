@@ -109,6 +109,7 @@ def style_chart_for_pdf(fig):
 def render_summary(projections, user_data, user, base_context,life_stage=None,stage_metrics=None):
     st.title("📊 Financial Outcome Summary")
 
+    is_mobile = st.session_state.get("is_mobile", False)
     with section(
         "Scenario Overview",
         "Your financial outcome based on current inputs"
@@ -216,7 +217,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             color="Score",
             color_continuous_scale="Blues"
         )
-
+        height = 320 if is_mobile else 500
+        fig_score.update_layout(height=height)
         st.plotly_chart(fig_score, use_container_width=True)
 
     #metrics = projections[0]["life_stage_metrics"]
@@ -254,6 +256,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             markers=True,
             color_discrete_sequence=["#22c55e", "#ef4444"],
         )
+        height = 320 if is_mobile else 500
+        fig_ie.update_layout(height=height)
         st.plotly_chart(fig_ie, use_container_width=True)
 
         st.markdown("**Corpus Growth 💰 - How Your Savings Change Over Time**")
@@ -263,6 +267,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             y="EndingCorpus",
             color_discrete_sequence=["#6366f1"],
         )
+        height = 320 if is_mobile else 500
+        fig_corpus.update_layout(height=height)
         st.plotly_chart(fig_corpus, use_container_width=True)
 
         st.markdown("**Tax Impact**")
@@ -273,6 +279,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             markers=True,
             color_discrete_sequence=["#f59e0b", "#22c55e"],
         )
+        height = 320 if is_mobile else 500
+        fig_tax.update_layout(height=height)
         st.plotly_chart(fig_tax, use_container_width=True)
 
     # -------------------------------------------------
@@ -482,13 +490,19 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
 
         with col1:
             if onetime_rows:
+                height = 320 if is_mobile else 500
+                fig_ot.update_layout(height=height)
                 st.plotly_chart(fig_ot, use_container_width=True)
 
         with col2:
             if recurring_rows:
+                height = 320 if is_mobile else 500
+                fig_rec.update_layout(height=height)
                 st.plotly_chart(fig_rec, use_container_width=True)
 
         if not df.empty:
+            height = 320 if is_mobile else 500
+            fig_exp_growth.update_layout(height=height)
             st.plotly_chart(fig_exp_growth, use_container_width=True)
 
    
@@ -523,6 +537,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             color="Scenario",
             color_discrete_sequence=["#6366f1", "#22c55e", "#ef4444"],
         )
+        height = 320 if is_mobile else 500
+        fig.update_layout(height=height)
         st.plotly_chart(fig, use_container_width=True)
 
         #st.dataframe(cmp_df, use_container_width=True)

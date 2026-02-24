@@ -88,6 +88,8 @@ def render_expense_summary(user_data: dict, currency: str = "₹"):
 
     country = user_data.get("country")
 
+    is_mobile = st.session_state.get("is_mobile", False)
+
     one_time = user_data.get("onetime_expenses", {}).get(country, {})
     recurring = user_data.get("recurring_expenses", {}).get(country, {})
 
@@ -119,7 +121,8 @@ def render_expense_summary(user_data: dict, currency: str = "₹"):
     # ONE TIME TABLE
     # =====================================================
     if one_time:
-        with st.expander("View One-Time Expenses", expanded=False):
+        #with st.expander("View One-Time Expenses", expanded=False):
+        with st.expander("View One-Time Expenses", expanded=not is_mobile):
             df = pd.DataFrame(one_time)
             st.dataframe(df, use_container_width=True)
 
@@ -132,7 +135,8 @@ def render_expense_summary(user_data: dict, currency: str = "₹"):
     # RECURRING TABLE
     # =====================================================
     if recurring:
-        with st.expander("View Recurring Expenses", expanded=False):
+        #with st.expander("View Recurring Expenses", expanded=False):
+        with st.expander("View Recurring Expenses", expanded=not is_mobile):
             df = pd.DataFrame(recurring)
             st.dataframe(df, use_container_width=True)
 

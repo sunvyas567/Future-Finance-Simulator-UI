@@ -139,7 +139,9 @@ def render_scenarios(user_data: dict, user: dict):
                 yaxis_title="Corpus Value",
                 legend_title="Scenario"
             )
-
+            is_mobile = st.session_state.get("is_mobile", False)
+            height = 320 if is_mobile else 500
+            fig.update_layout(height=height)
             st.plotly_chart(fig, use_container_width=True)
 
         # -------------------------------------------------
@@ -184,7 +186,9 @@ def render_scenarios(user_data: dict, user: dict):
             xaxis_title="Year",
             yaxis_title="Net Amount"
         )
-
+        is_mobile = st.session_state.get("is_mobile", False)
+        height = 320 if is_mobile else 500
+        fig2.update_layout(height=height)
         st.plotly_chart(fig2, use_container_width=True)
 
         # -------------------------------------------------

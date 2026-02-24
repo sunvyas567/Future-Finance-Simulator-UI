@@ -15,7 +15,10 @@ def render_assumption_panel(base_config:list, user_data:dict,user:dict):
         st.info("No assumptions defined for this country.")
         return
 
-    with st.expander("View & Edit Assumptions", expanded=True):
+    is_mobile = st.session_state.get("is_mobile", False)
+
+    #with st.expander("View & Edit Assumptions", expanded=True):
+    with st.expander("View & Edit Assumptions", expanded=not is_mobile):
         for item in assumption_fields:
             fname = item["Field Name"]
             label = item["Field Description"]

@@ -66,7 +66,9 @@ def render_scenario_dashboard(config, user_data, user):
         yaxis_title="Income",
         xaxis_title="Year"
     )
-
+    is_mobile = st.session_state.get("is_mobile", False)
+    height = 320 if is_mobile else 500
+    fig.update_layout(height=height)
     st.plotly_chart(fig, use_container_width=True)
 
     

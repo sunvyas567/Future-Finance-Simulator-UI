@@ -556,6 +556,8 @@ def render_investment_plan(user_data: dict, user: dict):
 
     ensure_scenarios(plan, country)
 
+    is_mobile = st.session_state.get("is_mobile", False)
+
     active = plan.get("active_scenario", "Base")
     scenario = plan["scenarios"][active]
 
@@ -1249,6 +1251,8 @@ def render_investment_plan(user_data: dict, user: dict):
             hole=0.45,
             title="Allocation Mix"
         )
+        height = 320 if is_mobile else 500
+        fig.update_layout(height=height)
 
         st.plotly_chart(fig, use_container_width=True)
         
@@ -1385,7 +1389,8 @@ def render_investment_plan(user_data: dict, user: dict):
                     template="plotly_white",
                     legend_title="Income Source",
                 )
-
+                height = 320 if is_mobile else 500
+                fig_income_sources.update_layout(height=height)
                 st.plotly_chart(fig_income_sources, use_container_width=True)
 
                 # Optional stacked version (uncomment if desired)
@@ -1404,6 +1409,7 @@ def render_investment_plan(user_data: dict, user: dict):
 
         # ---- Ending Corpus chart ----
         if "EndingCorpus" in df.columns:
+            
             st.plotly_chart(
                 px.line(
                     df,
