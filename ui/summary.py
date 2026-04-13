@@ -7,6 +7,9 @@ from ui.retirement_profiles import RETIREMENT_PROFILES
 from services.api_client import get_advisor_recommendations
 from ui.advisor_panel import render_advisor_panel
 
+import plotly.graph_objects as go
+
+
 
 def section(title, subtitle=None):
     st.markdown("### " + title)
@@ -110,6 +113,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
     st.title("📊 Financial Outcome Summary")
 
     is_mobile = st.session_state.get("is_mobile", False)
+    fig_ot = go.Figure()
+    fig_rec = go.Figure()
     with section(
         "Scenario Overview",
         "Your financial outcome based on current inputs"
