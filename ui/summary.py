@@ -224,7 +224,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         )
         height = 320 if is_mobile else 500
         fig_score.update_layout(height=height)
-        st.plotly_chart(fig_score, use_container_width=True)
+        st.plotly_chart(fig_score, width='stretch')
 
     #metrics = projections[0]["life_stage_metrics"]
 
@@ -263,7 +263,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         )
         height = 320 if is_mobile else 500
         fig_ie.update_layout(height=height)
-        st.plotly_chart(fig_ie, use_container_width=True)
+        st.plotly_chart(fig_ie, width='stretch')
 
         st.markdown("**Corpus Growth 💰 - How Your Savings Change Over Time**")
         fig_corpus = px.area(
@@ -274,7 +274,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         )
         height = 320 if is_mobile else 500
         fig_corpus.update_layout(height=height)
-        st.plotly_chart(fig_corpus, use_container_width=True)
+        st.plotly_chart(fig_corpus, width='stretch')
 
         st.markdown("**Tax Impact**")
         fig_tax = px.line(
@@ -286,7 +286,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         )
         height = 320 if is_mobile else 500
         fig_tax.update_layout(height=height)
-        st.plotly_chart(fig_tax, use_container_width=True)
+        st.plotly_chart(fig_tax, width='stretch')
 
     # -------------------------------------------------
     # Income vs Expenses
@@ -497,18 +497,18 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
             if onetime_rows:
                 height = 320 if is_mobile else 500
                 fig_ot.update_layout(height=height)
-                st.plotly_chart(fig_ot, use_container_width=True)
+                st.plotly_chart(fig_ot, width='stretch')
 
         with col2:
             if recurring_rows:
                 height = 320 if is_mobile else 500
                 fig_rec.update_layout(height=height)
-                st.plotly_chart(fig_rec, use_container_width=True)
+                st.plotly_chart(fig_rec, width='stretch')
 
         if not df.empty:
             height = 320 if is_mobile else 500
             fig_exp_growth.update_layout(height=height)
-            st.plotly_chart(fig_exp_growth, use_container_width=True)
+            st.plotly_chart(fig_exp_growth, width='stretch')
 
    
 
@@ -533,7 +533,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
 
         cmp_df = pd.DataFrame(rows)
 
-        st.dataframe(cmp_df, use_container_width=True)
+        st.dataframe(cmp_df, width='stretch')
 
         fig = px.bar(
             cmp_df,
@@ -544,7 +544,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         )
         height = 320 if is_mobile else 500
         fig.update_layout(height=height)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         #st.dataframe(cmp_df, use_container_width=True)
         #st.plotly_chart(fig, use_container_width=True)

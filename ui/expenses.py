@@ -245,7 +245,7 @@ def render_expenses(config, user_data, user):
                 fig_expense_growth.update_layout(height=height)
                 #st.plotly_chart(fig, use_container_width=True)
 
-                st.plotly_chart(fig_expense_growth, use_container_width=True)
+                st.plotly_chart(fig_expense_growth, width='stretch')
 
         else:
             st.info("Complete inputs to visualize expense growth.")

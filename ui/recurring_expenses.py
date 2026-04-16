@@ -257,4 +257,4 @@ def render_recurring_expenses(config, user_data, user):
         is_mobile = st.session_state.get("is_mobile", False)
         height = 320 if is_mobile else 500
         fig.update_layout(height=height)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')

@@ -253,7 +253,7 @@ def render_onetime_expenses(config, user_data, user):
         st.divider()
         st.markdown("### 📊 Derived One-Time Costs")
         df = pd.DataFrame(derived_rows)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width='stretch')
 
     # -------------------------------------------------
     # Total (derived, single source of truth)
