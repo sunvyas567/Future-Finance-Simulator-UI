@@ -51,7 +51,7 @@ def ensure_scenarios(plan: dict, country: str):
     #print("PLAN at ensure entry:", plan)
     # ---------- Base ----------
     base = plan["scenarios"].get("Base")
-    print("Base scenario in ensure -1 :", base)
+    #print("Base scenario in ensure -1 :", base)
     def is_empty_scenario(sc: dict) -> bool:
         if not isinstance(sc, dict):
             return True
@@ -578,10 +578,10 @@ def render_investment_plan(user_data: dict, user: dict):
     #    plan["scenarios"]["Base"] = _default_scenario(country)
 
     # Hydrate all scenarios safely (NO overwrite)
-    print("normal scenarion before hydrating with defaults 1:", scenario)
+    #print("normal scenarion before hydrating with defaults 1:", scenario)
     default = _default_scenario(country)
-    print("DEFAULT PLAN SCENARIO:", default)
-    print("normal scenarion before hydrating with defaults: 2", scenario)
+    #print("DEFAULT PLAN SCENARIO:", default)
+    #print("normal scenarion before hydrating with defaults: 2", scenario)
     for sc in plan["scenarios"].values():
         for section in ["allocations", "rates", "income_sources", "withdrawal"]:
             sc.setdefault(section, {})
@@ -604,7 +604,7 @@ def render_investment_plan(user_data: dict, user: dict):
                 base, "aggressive"
             )
     else:
-        print("Iam in guest mode, skipping auto-creation of Conservative and Aggressive scenarios")
+        #print("Iam in guest mode, skipping auto-creation of Conservative and Aggressive scenarios")
         base = plan["scenarios"]["Base"] # Fix for Guest login ket error withdrawal
 
 
@@ -633,8 +633,8 @@ def render_investment_plan(user_data: dict, user: dict):
 
         engine_default_alloc = allocation_model["allocations"]
         engine_rates = allocation_model["rates"]
-        if country == "US" or country == "UK" or country == "IN":
-            print("Allocation model built - for", country, allocation_model)
+        #if country == "US" or country == "UK" or country == "IN":
+        #    print("Allocation model built - for", country, allocation_model)
         #print("scenario before engine sync:", scenario)
         #scenario = apply_age_based_default_allocation(
         #    scenario,
@@ -699,7 +699,7 @@ def render_investment_plan(user_data: dict, user: dict):
         # --------------------------------------------------
         # ENGINE SYNC — RUN ONLY ONCE PER SCENARIO
         # --------------------------------------------------
-        print("Before engine sync check")
+        #print("Before engine sync check")
         if not scenario.get("_engine_synced"):
 
             scenario.setdefault("allocations", {})
@@ -709,7 +709,7 @@ def render_investment_plan(user_data: dict, user: dict):
             existing_rates = scenario["rates"]
 
             # FIRST TIME ONLY → full engine defaults
-            print("Existing allocations before engine sync 123:", existing_alloc)
+            #print("Existing allocations before engine sync 123:", existing_alloc)
             if not existing_alloc:
                 scenario["allocations"] = engine_default_alloc.copy()
                 #print("Applied engine default allocations")
@@ -731,7 +731,7 @@ def render_investment_plan(user_data: dict, user: dict):
                 }
                 #print("Removed obsolete instruments from allocations", scenario["allocations"])
             # normalize
-            print("2# - calling normalize allications with country:", country)
+            #print("2# - calling normalize allications with country:", country)
             scenario["allocations"] = normalize_allocations(
                 scenario["allocations"],
                 country=country
@@ -745,7 +745,7 @@ def render_investment_plan(user_data: dict, user: dict):
 
             scenario["_engine_synced"] = True
 
-            print("Engine synced once for scenario with data", scenario)
+            #print("Engine synced once for scenario with data", scenario)
 
         #if not scenario.get("_engine_synced"):
 
