@@ -60,14 +60,16 @@ def hydrate_initial_corpus_defaults(user_data: dict, country: str):
 
     expected = DEFAULTS.get(country, {})
     user_data.setdefault("initial_corpus", {})
-
-    # If country changed → reset safely
-    if set(user_data["initial_corpus"].keys()) != set(expected.keys()):
-        user_data["initial_corpus"] = {}
+    country = user_data.get("country", "IN")
+    user_data["initial_corpus"].setdefault(country, {})
+    country_corpus = user_data["initial_corpus"][country]
+    # If country changed → reset safely - NOT required as country level scoping is implemented for corpus values    
+    #if set(user_data["initial_corpus"].keys()) != set(expected.keys()):
+    #    user_data["initial_corpus"] = {}
 
     # Apply defaults ONLY if missing
     for k, v in expected.items():
-        user_data["initial_corpus"].setdefault(k, v)
+        country_corpus.setdefault(k, v)
 
     #print("InitialCorpus defualts", user_data["initial_corpus"])
 
@@ -97,10 +99,15 @@ def render_base_data(config, user_data: dict, user: dict):
 
     user_data.setdefault("country", "IN")
 
+    def Reset_Active_Scenario(): # for investment plan page - resets active scenario to base on country change to prevent key errors
+        # Implementation for resetting active scenario
+        st.session_state["_active_scenario_loaded"] = None  # Reset the flag to allow reloading the scenario for the new country
+
     selected = st.selectbox(
         "🌍 Country of Residence",
         list(COUNTRIES.keys()),
         index=list(COUNTRIES.values()).index(user_data["country"]),
+        on_change=Reset_Active_Scenario, #resets active scenario to base on country change to prevent key errors
         disabled=is_guest,
     )
 
@@ -214,6 +221,61 @@ def render_base_data(config, user_data: dict, user: dict):
 
 
     def render_corpus_cards(corpus_config: list):
+        # 1. Ensure the nested structure exists for the current country
+        user_data.setdefault("initial_corpus", {})
+        country = user_data.get("country", "IN")
+        user_data["initial_corpus"].setdefault(country, {})
+        
+        # 2. Create a shortcut to the current country's corpus data
+        country_corpus = user_data["initial_corpus"][country]
+
+        total = 0
+        cols = st.columns(2)
+
+        for idx, item in enumerate(corpus_config):
+            col = cols[idx % 2]
+            key = item["key"]
+
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"### {item['icon']} {item['label']}")
+
+                    # We include 'country' in the session_state key to prevent 
+                    # values from "bleeding" over when switching countries
+                    include_key = f"corpus_{country}_{key}_include"
+                    value_key = f"corpus_{country}_{key}_value"
+
+                    # Initialize include flag based on country-specific data
+                    if include_key not in st.session_state:
+                        st.session_state[include_key] = country_corpus.get(key, 0) > 0
+
+                    include = st.checkbox(
+                        "Include",
+                        key=include_key,
+                        disabled=is_guest or not is_premium
+                    )
+
+                    # Get value from the country-specific dictionary
+                    current_value = float(country_corpus.get(key, 0))
+
+                    value = st.number_input(
+                        f"Amount ({currency})",
+                        min_value=0.0,
+                        value=current_value,
+                        disabled=not include or is_guest or not is_premium,
+                        key=value_key
+                    )
+
+                    if not is_guest:
+                        # Save back to the country-specific dictionary
+                        country_corpus[key] = value if include else 0.0
+
+                    if include:
+                        total += value
+        
+        return total # Optional: return total if you need it elsewhere
+
+    def render_corpus_cards_old(corpus_config: list):
         total = 0
         cols = st.columns(2)
 

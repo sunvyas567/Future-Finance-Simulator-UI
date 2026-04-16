@@ -265,8 +265,9 @@ def build_allocation_model(country: str, age: int, corpus: float):
     else:
         alloc, rates = _uk_model(age, corpus)
 
-    alloc = filter_instruments_by_age(alloc, age)
-    alloc = normalize_allocations(alloc)
+    alloc = filter_instruments_by_age(alloc, age,country)
+    #print("1# - calling normalize allications with country:", country)
+    alloc = normalize_allocations(alloc, country)
 
     return {
         "allocations": alloc,
@@ -277,12 +278,13 @@ def build_allocation_model(country: str, age: int, corpus: float):
 # ---------------------------------------------------------
 # AGE ELIGIBILITY FILTER
 # ---------------------------------------------------------
-def filter_instruments_by_age(allocations: dict, age: int):
+def filter_instruments_by_age(allocations: dict, age: int,country: str):
 
     alloc = allocations.copy()
 
-    if age is None or age < SCSS_MIN_AGE:
-        alloc["SCSS"] = 0
+    if country == "IN":
+        if age is None or age < SCSS_MIN_AGE:
+            alloc["SCSS"] = 0
 
     return alloc
 
@@ -290,12 +292,13 @@ def filter_instruments_by_age(allocations: dict, age: int):
 # ---------------------------------------------------------
 # NORMALIZATION ENGINE
 # ---------------------------------------------------------
-def normalize_allocations(allocations: dict):
+def normalize_allocations(allocations: dict,country: str):
     """
     Ensures total = 100%
     Preserves proportions.
     """
 
+    #print("Normalizing allocations:", allocations)
     total = sum(allocations.values())
 
     if total <= 0:

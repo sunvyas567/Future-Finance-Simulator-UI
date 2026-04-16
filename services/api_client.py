@@ -51,6 +51,7 @@ def get_config():
     - investment plan config
     """
     #def get_config():
+    #print("Fetching config from backend...")
     raw = _get("/config")
 
     return {
@@ -64,6 +65,7 @@ def get_config():
     #return _get("/config/")
 
 def get_config(country="IN"):
+    #print("Fetching config for country:", country)
     resp = requests.get(f"{BACKEND_BASE_URL}/config/", params={"country": country})
     resp.raise_for_status()
     return resp.json()
@@ -94,8 +96,10 @@ def save_user_data(username: str, data: dict):
     Persist simulator inputs for a user
     """
     if not data or data == {}:
-        print("Not saving null user data ")
+        print("SSSSS-Not saving null user data ")
         return   # do nothing
+    #print("TTTTTT-Saving user data for", username, "with keys:", list(data.keys()))
+    #print("User data content:", data)
     payload = {
         "username": username,
         "data": data

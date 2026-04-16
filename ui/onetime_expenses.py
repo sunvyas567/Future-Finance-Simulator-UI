@@ -169,7 +169,7 @@ def render_onetime_expenses(config, user_data, user):
         visible_fields.append(field)
 
     cols = st.columns(2)
-    print("Visible fields for one-time expenses:", [f["Field Name"] for f in visible_fields])
+    #print("Visible fields for one-time expenses:", [f["Field Name"] for f in visible_fields])
     for idx, field in enumerate(visible_fields):
     #for idx, field in enumerate(input_fields):
         col = cols[idx % 2]
@@ -222,7 +222,7 @@ def render_onetime_expenses(config, user_data, user):
                         "input": value if include else 0.0
                     }
 
-        expenses[key] = {"input": value}
+        #expenses[key] = {"input": value} #commented for above country level scoping
 
     
     #print("One-time expenses UI: - 2", expenses)

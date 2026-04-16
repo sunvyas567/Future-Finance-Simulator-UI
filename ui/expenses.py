@@ -175,7 +175,11 @@ def render_expenses(config, user_data, user):
 
         # 🔥 Ensure scenarios exist before projection call
         
-        plan = user_data.setdefault("investment_plan", {})
+        #print("User data at start of expense projections:", user_data)
+        user_data.setdefault("investment_plan", {})
+        country = user_data.get("country", "IN")
+        user_data["investment_plan"].setdefault(country, {})
+        plan = user_data["investment_plan"][country]
         #from ui.investment_plan import ensure_scenarios
 
         #plan = user_data.setdefault("investment_plan", {})
@@ -183,6 +187,8 @@ def render_expenses(config, user_data, user):
             plan["active_scenario"] = "Base"
 
         # 🔥 ALWAYS ensure scenarios before running engine
+        #print("PLAN 1 before ensuring scenarios in expenses.py:", plan)
+        #print("Plan 2 scenarios before ensuring in expenses.py:", plan.get("scenarios", {}).keys())
         ensure_scenarios(plan, user_data.get("country"))
 
         #scenarios = plan.get("scenarios", {})

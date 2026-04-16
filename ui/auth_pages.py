@@ -64,7 +64,7 @@ def render_register():
 
         #auth._authenticator = None   # reset cached authenticator
         #st.session_state.authentication_status = None
-
+        st.session_state.clear()  # Clear all session state to reset authentication
         st.session_state.view = "login"
         st.rerun()
 

@@ -106,6 +106,7 @@ def apply_defaults_from_config(
     # ONE-TIME EXPENSES
     # ---------------------------------------------------------
     user_data.setdefault("onetime_expenses", {})
+    user_data["onetime_expenses"].setdefault(country, {})
 
     for field in config.get("onetime_expenses", []):
         fname = field.get("Field Name")
@@ -115,7 +116,7 @@ def apply_defaults_from_config(
             continue
 
         set_default(
-            user_data["onetime_expenses"],
+            user_data["onetime_expenses"][country],
             fname,
             {"input": default}
         )
@@ -158,8 +159,8 @@ def apply_defaults_from_config(
     # ---------------------------------------------------------
     if "investment_plan" not in user_data or force:
         user_data["investment_plan"] = {}
-
-    plan = user_data["investment_plan"]
+    user_data["investment_plan"].setdefault(country, {})
+    plan = user_data["investment_plan"][country]
 
     plan.setdefault("active_scenario", "Base")
     plan.setdefault("scenarios", {})
@@ -308,13 +309,16 @@ def run_simulator(is_guest: bool = False):
     # 2. LOAD USER DATA (ONCE)
     # ==========================================================
     if "user_data" not in st.session_state:
+        print("user data not in session state, loading...")
         if user["is_guest"]:
             st.session_state.user_data = {}
         else:
+            print(f"Loading user data for '{user['username']}' from backend...")
             st.session_state.user_data = get_user_data(user["username"]) or {}
 
     user_data = st.session_state.user_data
 
+    #print("Loaded user data:", user_data)
     # ----------------------------------------------------------
     # Country safety (MUST be before config)
     # ----------------------------------------------------------
@@ -653,5 +657,5 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     if not user["is_guest"]:
         #print(f"Saving user data for '{user['username']}' with keys: {list(user_data.keys())}")
-        #print("session states user data : ", st.session_state.user_data)
+        #print(" From Simulatoe savinbg session states user data : ", st.session_state.user_data)
         save_user_data(user["username"], st.session_state.user_data)

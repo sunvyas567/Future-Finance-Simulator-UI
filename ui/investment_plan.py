@@ -48,9 +48,10 @@ def ensure_scenarios(plan: dict, country: str):
     plan.setdefault("active_scenario", "Base")
     plan.setdefault("scenarios", {})
 
+    #print("PLAN at ensure entry:", plan)
     # ---------- Base ----------
     base = plan["scenarios"].get("Base")
-    #print("Base scenario in ensure -1 :", base)
+    print("Base scenario in ensure -1 :", base)
     def is_empty_scenario(sc: dict) -> bool:
         if not isinstance(sc, dict):
             return True
@@ -58,13 +59,14 @@ def ensure_scenarios(plan: dict, country: str):
             return True
         if not sc.get("allocations"):
             return True
-        if not sc.get("rates"):
+        if not sc.get("rates"):#
             return True
         if "income_sources" not in sc:
             return True
         return False
     
     if is_empty_scenario(base):
+        #print("Base scenario missing or empty. Applying defaults for country:", country)
         plan["scenarios"]["Base"] = _default_scenario(country)
     #if not isinstance(base, dict) or not base:
         #print("Base scenario missing or invalid. Applying defaults.")
@@ -125,6 +127,7 @@ def _default_scenario(country: str) -> dict:
         }
 
     if country == "US":
+        #print("Country is US, returning US default scenario")
         return {
             "allocations": {
                 "SWP": 40,
@@ -513,8 +516,8 @@ def render_investment_plan(user_data: dict, user: dict):
     # Resolve active scenario (ALWAYS define early)
     # -------------------------------------------------
 
-    investment_plan = user_data.setdefault("investment_plan", {})
-    scenarios = investment_plan.setdefault("scenarios", {})
+    #investment_plan = user_data.setdefault("investment_plan", {}) #extra comment for country level scoping
+    #scenarios = investment_plan.setdefault("scenarios", {})# extra comment for country level scoping
 
     # active scenario name
     #active = investment_plan.get("selected_scenario", "Base")
@@ -552,13 +555,22 @@ def render_investment_plan(user_data: dict, user: dict):
     #plan.setdefault("scenarios", {})
 
     user_data.setdefault("investment_plan", {})
-    plan = user_data["investment_plan"]
+
+    user_data["investment_plan"].setdefault(country, {})
+
+    #scenarios = investment_plan.setdefault("scenarios", {}) # new changed moved here
+
+    # Assigned to 'plan' (or 'investment_plan') to keep it clear
+    plan = user_data["investment_plan"][country]
+    #plan = user_data["investment_plan"]
 
     ensure_scenarios(plan, country)
 
     is_mobile = st.session_state.get("is_mobile", False)
 
     active = plan.get("active_scenario", "Base")
+
+    #print("Active scenario in render:", active)
     scenario = plan["scenarios"][active]
 
     # Ensure Base exists
@@ -566,8 +578,10 @@ def render_investment_plan(user_data: dict, user: dict):
     #    plan["scenarios"]["Base"] = _default_scenario(country)
 
     # Hydrate all scenarios safely (NO overwrite)
+    print("normal scenarion before hydrating with defaults 1:", scenario)
     default = _default_scenario(country)
-    #print("PLAN SCENARIO:", plan["scenarios"])
+    print("DEFAULT PLAN SCENARIO:", default)
+    print("normal scenarion before hydrating with defaults: 2", scenario)
     for sc in plan["scenarios"].values():
         for section in ["allocations", "rates", "income_sources", "withdrawal"]:
             sc.setdefault(section, {})
@@ -602,7 +616,7 @@ def render_investment_plan(user_data: dict, user: dict):
     with ui_section("Financial Foundation", "💼"):
         st.subheader("💰  Your Current Savings - Starting Corpus")
 
-        corpus = user_data.get("initial_corpus", {})
+        corpus = user_data["initial_corpus"][country] #if "initial_corpus" in user_data and "country" in user_data["initial_corpus"] else {}   
         #print("CORPUS", corpus)
         total_corpus = round(sum(corpus.values()), 2)
 
@@ -619,8 +633,8 @@ def render_investment_plan(user_data: dict, user: dict):
 
         engine_default_alloc = allocation_model["allocations"]
         engine_rates = allocation_model["rates"]
-
-        #print("Allocation model built: 5", allocation_model)
+        if country == "US" or country == "UK" or country == "IN":
+            print("Allocation model built - for", country, allocation_model)
         #print("scenario before engine sync:", scenario)
         #scenario = apply_age_based_default_allocation(
         #    scenario,
@@ -685,6 +699,7 @@ def render_investment_plan(user_data: dict, user: dict):
         # --------------------------------------------------
         # ENGINE SYNC — RUN ONLY ONCE PER SCENARIO
         # --------------------------------------------------
+        print("Before engine sync check")
         if not scenario.get("_engine_synced"):
 
             scenario.setdefault("allocations", {})
@@ -694,7 +709,7 @@ def render_investment_plan(user_data: dict, user: dict):
             existing_rates = scenario["rates"]
 
             # FIRST TIME ONLY → full engine defaults
-            #print("Existing allocations before engine sync 123:", existing_alloc)
+            print("Existing allocations before engine sync 123:", existing_alloc)
             if not existing_alloc:
                 scenario["allocations"] = engine_default_alloc.copy()
                 #print("Applied engine default allocations")
@@ -716,8 +731,10 @@ def render_investment_plan(user_data: dict, user: dict):
                 }
                 #print("Removed obsolete instruments from allocations", scenario["allocations"])
             # normalize
+            print("2# - calling normalize allications with country:", country)
             scenario["allocations"] = normalize_allocations(
-                scenario["allocations"]
+                scenario["allocations"],
+                country=country
             )
 
             # sync rates
@@ -727,6 +744,8 @@ def render_investment_plan(user_data: dict, user: dict):
             }
 
             scenario["_engine_synced"] = True
+
+            print("Engine synced once for scenario with data", scenario)
 
         #if not scenario.get("_engine_synced"):
 
@@ -768,7 +787,8 @@ def render_investment_plan(user_data: dict, user: dict):
                 pd.DataFrame(
                     [{"Component": k, "Amount": v} for k, v in corpus.items()]
                 ),
-                use_container_width=True,
+                #use_container_width=True,
+                width='stretch'
             )
 
         if total_corpus == 0:
@@ -960,7 +980,9 @@ def render_investment_plan(user_data: dict, user: dict):
         plan["active_scenario"] = selected
         scenario = plan["scenarios"][selected]
 
-        #print("Selected scenario:", selected)
+        #print("11# Selected scenario: before _active_scenario_loaded", scenario)
+        #print("11#Selected scenario allocations: before _active_scenario_loaded", scenario["allocations"])
+        #MAJOR CHANGE — force session state to update with scenario allocations on scenario change (fixes stale session state when switching scenarios)
         #st.session_state.alloc_state = scenario["allocations"].copy()
         #for k, v in scenario["allocations"].items():
         #    st.session_state[f"alloc_{k}"] = float(v)
@@ -981,14 +1003,16 @@ def render_investment_plan(user_data: dict, user: dict):
             # 1️⃣ apply engine rules ONCE when scenario selected
             scenario_alloc = filter_instruments_by_age(
                 allocations=scenario["allocations"],
-                age=age
+                age=age,
+                country=country
             )
-
-            scenario_alloc = normalize_allocations(scenario_alloc)
+            #print("3# - calling normalize allications with country:", country)
+            scenario_alloc = normalize_allocations(scenario_alloc, country=country)
 
             scenario["allocations"] = scenario_alloc
 
             # 2️⃣ load into session UI state
+            #print( "SCENARIO ALLOC 1 for country:", country, scenario_alloc)
             st.session_state.alloc_state = scenario_alloc.copy()
 
             for k, v in scenario_alloc.items():
@@ -1050,7 +1074,7 @@ def render_investment_plan(user_data: dict, user: dict):
 
         display_alloc = st.session_state.alloc_state.copy()
 
-
+        #print("Display allocations after enforcing stage rules:", display_alloc)
 
         #print("Scenario after enforcing stage rules:", scenario)
         # ---------------------------------------------------------
@@ -1104,18 +1128,24 @@ def render_investment_plan(user_data: dict, user: dict):
         with st.container(border=True):
             st.markdown("### 🛡 Investment Limits")
             #print(f"User age: {age}")
-            if age and age < SCSS_MIN_AGE:
-                st.info("SCSS not available below age 60")
 
-            else:
-                st.info(f"SCSS max allowed: {scss_pct_cap:.2f}%")
+            if country == "IN":
+                if age and age < SCSS_MIN_AGE:
+                    st.info("SCSS not available below age 60")
 
-            st.checkbox(
-                "Joint POMIS account",
-                key="pomis_joint",
-            )
+                else:
+                    st.info(f"SCSS max allowed: {scss_pct_cap:.2f}%")
 
-            st.info(f"POMIS max allowed: {pomis_pct_cap:.2f}%")
+                st.checkbox(
+                    "Joint POMIS account",
+                    key="pomis_joint",
+                )
+
+                st.info(f"POMIS max allowed: {pomis_pct_cap:.2f}%")
+            elif country == "US":
+                st.info("401(k) and IRA limits depend on age and income. Consult plan details.")
+            elif country == "UK":
+                st.info("Pension and ISA limits depend on age and income. Consult plan details.")
 
         # =========================================================
         # CHANGE HANDLER
@@ -1123,6 +1153,7 @@ def render_investment_plan(user_data: dict, user: dict):
         def allocation_changed(inst):
 
             st.session_state.alloc_state[inst] = st.session_state[f"alloc_{inst}"]
+            #print("ALLOC STATE 2 on CHANGE:", st.session_state.alloc_state[inst])
 
             alloc = st.session_state.alloc_state.copy()
 
@@ -1157,6 +1188,7 @@ def render_investment_plan(user_data: dict, user: dict):
             alloc["POMIS"] = min(alloc["POMIS"], pomis_pct_cap)
             #print("Alloc after change and cap enforcement:", alloc)
             # ---------- write back ----------
+            #print("ALLOC STATE 3 On Change before writing back:", alloc)
             st.session_state.alloc_state = alloc
 
             for k, v in alloc.items():
@@ -1214,7 +1246,7 @@ def render_investment_plan(user_data: dict, user: dict):
                 label,
                 min_value=float(0),
                 max_value=float(100),
-                #value=float(st.session_state.alloc_state.get(key, 0.0)),
+                value=float(st.session_state.alloc_state.get(key, 0.0)),
                 step=float(1),
                 key=f"alloc_{key}",
                 disabled=disabled,
@@ -1254,7 +1286,7 @@ def render_investment_plan(user_data: dict, user: dict):
         height = 320 if is_mobile else 500
         fig.update_layout(height=height)
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')#use_container_width=True)
         
         #scenario["allocations"] = st.session_state.alloc_state.copy()
 
@@ -1264,9 +1296,10 @@ def render_investment_plan(user_data: dict, user: dict):
 
         #scenario["allocations"] = final_alloc
         #st.session_state.alloc_state = final_alloc
-
+        #print("4# - calling normalize allications with country:", country)
         scenario["allocations"] = normalize_allocations(
-            st.session_state.alloc_state.copy()
+            st.session_state.alloc_state.copy(),
+            country=country
         )
 
         rows = []
@@ -1291,7 +1324,7 @@ def render_investment_plan(user_data: dict, user: dict):
             alloc_total += alloc
         
         
-        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+        st.dataframe(pd.DataFrame(rows), width='stretch')#use_container_width=True)
 
         if alloc_total != 100:
             st.warning(f"Allocation totals {alloc_total}%. Recommended: 100%.")
@@ -1355,7 +1388,7 @@ def render_investment_plan(user_data: dict, user: dict):
             return
 
         df = pd.DataFrame(projections)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width='stretch')#use_container_width=True)
 
     with ui_section("Growth Visualisation", "📉"):
 
@@ -1391,7 +1424,7 @@ def render_investment_plan(user_data: dict, user: dict):
                 )
                 height = 320 if is_mobile else 500
                 fig_income_sources.update_layout(height=height)
-                st.plotly_chart(fig_income_sources, use_container_width=True)
+                st.plotly_chart(fig_income_sources, width='stretch')#use_container_width=True)
 
                 # Optional stacked version (uncomment if desired)
                 """
@@ -1402,7 +1435,7 @@ def render_investment_plan(user_data: dict, user: dict):
                     title="Stacked Income Sources Over Time",
                 )
                 fig_stacked.update_layout(template="plotly_white")
-                st.plotly_chart(fig_stacked, use_container_width=True)
+                st.plotly_chart(fig_stacked, width='stretch')
                 """
             else:
                 st.info("No instrument-level income data available.")
@@ -1418,7 +1451,7 @@ def render_investment_plan(user_data: dict, user: dict):
                     markers=True,
                     title=f"Ending Corpus — {active.get('scenario', 'Base')} Scenario",
                 ),
-                use_container_width=True,
+                width='stretch',#use_container_width=True,
             )
 
         # ---- Income vs Expenses ----
@@ -1435,7 +1468,7 @@ def render_investment_plan(user_data: dict, user: dict):
                     markers=True,
                     title="Income vs Expenses",
                 ),
-                use_container_width=True,
+                width='stretch',#use_container_width=True,
             )
 
         # =========================================================
@@ -1466,7 +1499,7 @@ def render_investment_plan(user_data: dict, user: dict):
         if comparison_rows:
             df_cmp = pd.DataFrame(comparison_rows)
 
-            st.dataframe(df_cmp, use_container_width=True)
+            st.dataframe(df_cmp, width='stretch')#use_container_width=True)
 
             st.plotly_chart(
                 px.bar(
@@ -1478,7 +1511,7 @@ def render_investment_plan(user_data: dict, user: dict):
                     color="Scenario",
                     color_discrete_sequence=["#6366f1", "#22c55e", "#ef4444"],
                 ),
-                use_container_width=True,
+                width='stretch',#use_container_width=True,
             )
         st.caption(
             "These charts illustrate how your financial position evolves "
