@@ -141,6 +141,15 @@ def render_landing():
         padding-left: 1rem;
         padding-right: 1rem;
     }
+    /* NEW: Hide the sidebar completely on mobile screens */
+    @media (max-width: 768px) {
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 

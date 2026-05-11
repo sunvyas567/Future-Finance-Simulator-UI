@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit_option_menu import option_menu
 
 from services.api_client import (
     get_config,
@@ -466,17 +467,37 @@ def run_simulator(is_guest: bool = False):
     if "page" not in st.session_state or st.session_state.page not in pages:
         st.session_state.page = pages[0]
 
-    with st.sidebar:
-        selected = st.radio(
-            "Navigate",
-            pages,
-            index=pages.index(st.session_state.page),
-        )
-        if selected != st.session_state.page:
-            st.session_state.page = selected
-            st.rerun()
+    # Create the horizontal menu directly in the main body (No Sidebar)
+    selected = option_menu(
+        menu_title=None, 
+        options=pages,
+        # Adding Bootstrap icons makes the tabs look like a real mobile app
+        icons=["house", "person", "receipt", "piggy-bank", "bar-chart-line", "star"], 
+        default_index=pages.index(st.session_state.page),
+        orientation="horizontal",
+        styles={
+            "container": {"padding": "0!important", "margin-bottom": "1rem"},
+            "nav-link": {"font-size": "13px", "text-align": "center", "margin":"0px"},
+            "nav-link-selected": {"background-color": "#4285f4"}, # Google Blue
+        }
+    )
+
+    if selected != st.session_state.page:
+        st.session_state.page = selected
+        st.rerun()
 
     page = st.session_state.page
+    #with st.sidebar:
+    #    selected = st.radio(
+    #        "Navigate",
+    #        pages,
+    #        index=pages.index(st.session_state.page),
+    #    )
+    #    if selected != st.session_state.page:
+    #        st.session_state.page = selected
+    #        st.rerun()
+
+    #page = st.session_state.page
 
     # ==========================================================
     # 6. PROJECTIONS (ONLY FOR SUMMARY)
