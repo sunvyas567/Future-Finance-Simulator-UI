@@ -141,6 +141,15 @@ def render_landing():
         padding-left: 1rem;
         padding-right: 1rem;
     }
+    /* NEW: Hide the default Streamlit top bar and menu */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    /* NEW: Hide the "Deploy" button (just in case Streamlit forces it) */
+    .stDeployButton {
+        display: none !important;
+    }
     /* NEW: Hide the sidebar completely on mobile screens */
     @media (max-width: 768px) {
         [data-testid="collapsedControl"] {
