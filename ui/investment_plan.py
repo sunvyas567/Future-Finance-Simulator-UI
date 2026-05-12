@@ -512,47 +512,6 @@ def render_investment_plan(user_data: dict, user: dict):
     country = user_data.get("country", "IN")
     currency = get_currency(user_data)
 
-    # -------------------------------------------------
-    # Resolve active scenario (ALWAYS define early)
-    # -------------------------------------------------
-
-    #investment_plan = user_data.setdefault("investment_plan", {}) #extra comment for country level scoping
-    #scenarios = investment_plan.setdefault("scenarios", {})# extra comment for country level scoping
-
-    # active scenario name
-    #active = investment_plan.get("selected_scenario", "Base")
-
-    # ---------------------------------------------------------
-    # Ensure investment_plan structure (SAFE & PERSISTENT)
-    # ---------------------------------------------------------
-    #user_data.setdefault("investment_plan", {})
-    #plan = user_data["investment_plan"]
-
-    #active = plan.get("active_scenario", "Base")
-
-
-    # ensure exists
-    #if active not in scenarios:
-    #    scenarios[active] = {}
-
-    # active scenario object
-    #scenario = scenarios[active]
-
-    #print("scenario at start of render:", scenario)
-    # Default scenario name
-    #scenario_name = investment_plan.get("selected_scenario", "Base")
-
-    # Ensure scenario exists
-    #if scenario_name not in scenarios:
-    #    scenarios[scenario_name] = {}
-
-    # FINAL scenario object used everywhere
-    #scenario = scenarios[scenario_name]
-
-
-    #ensure_scenarios(plan, country)
-    #plan.setdefault("active_scenario", "Base")
-    #plan.setdefault("scenarios", {})
 
     user_data.setdefault("investment_plan", {})
 
@@ -633,68 +592,6 @@ def render_investment_plan(user_data: dict, user: dict):
 
         engine_default_alloc = allocation_model["allocations"]
         engine_rates = allocation_model["rates"]
-        #if country == "US" or country == "UK" or country == "IN":
-        #    print("Allocation model built - for", country, allocation_model)
-        #print("scenario before engine sync:", scenario)
-        #scenario = apply_age_based_default_allocation(
-        #    scenario,
-        #    total_corpus,
-        #    age
-
-        # --------------------------------------------------
-        # SYNC SCENARIO WITH ENGINE MODEL (PRODUCTION SAFE)
-        # --------------------------------------------------
-
-        # ensure dicts exist
-        #scenario.setdefault("allocations", {})
-        #scenario.setdefault("rates", {})
-
-        #existing_alloc = scenario["allocations"]
-        #existing_rates = scenario["rates"]
-
-        # --------------------------------------------------
-        # 1️⃣ rebuild allocations from engine structure
-        #    preserve user values if instrument still valid
-        # --------------------------------------------------
-        #scenario["allocations"] = {
-        #    inst: existing_alloc.get(inst, default_pct)
-        #    for inst, default_pct in engine_default_alloc.items()
-        #}
-
-        # --------------------------------------------------
-        # 2️⃣ normalize to 100%
-        # --------------------------------------------------
-        #from core.allocation_engine import normalize_allocations
-
-        #scenario["allocations"] = normalize_allocations(
-        #    scenario["allocations"]
-        #)
-
-        # --------------------------------------------------
-        # 3️⃣ sync rates (preserve user override if exists)
-        # --------------------------------------------------
-        #scenario["rates"] = {
-        #    inst: existing_rates.get(inst, default_rate)
-        #   for inst, default_rate in engine_rates.items()
-        #}
-        #print("Scenario after syncing with engine defaults: 3", scenario)
-        # ---------------------------------------------------------
-        # SYNC SCENARIO WITH ENGINE DEFAULTS (ONLY IF EMPTY)
-        # ---------------------------------------------------------
-        #if not scenario.get("allocations"):
-        #    print("I am her 1")
-        #    scenario["allocations"] = engine_default_alloc.copy()
-
-        # ensure all instruments exist
-        #for inst, pct in engine_default_alloc.items():
-        #    print("inst:", inst, "pct:", pct)
-        #    scenario["allocations"].setdefault(inst, pct)
-
-        #print("Engine default allocations:", engine_default_alloc)
-        # ensure rates synced
-        #for inst, rate in engine_rates.items():
-        #    print("I am her 3")
-        #    scenario["rates"].setdefault(inst, rate)
 
         # --------------------------------------------------
         # ENGINE SYNC — RUN ONLY ONCE PER SCENARIO
@@ -745,40 +642,6 @@ def render_investment_plan(user_data: dict, user: dict):
 
             scenario["_engine_synced"] = True
 
-            #print("Engine synced once for scenario with data", scenario)
-
-        #if not scenario.get("_engine_synced"):
-
-        #    scenario.setdefault("allocations", {})
-        #    scenario.setdefault("rates", {})
-
-        #    existing_alloc = scenario["allocations"]
-        #    existing_rates = scenario["rates"]
-
-            # rebuild structure from engine (preserve user values)
-        #    scenario["allocations"] = {
-        #        inst: existing_alloc.get(inst, pct)
-        #        for inst, pct in engine_default_alloc.items()
-        #    }
-        #    print("Scenario after rebuilding with engine structure:", scenario)
-        #    scenario["allocations"] = normalize_allocations(
-        #        scenario["allocations"]
-        #    )
-        #    print("Scenario after normalizing allocations:", scenario)
-        #    scenario["rates"] = {
-        #        inst: existing_rates.get(inst, rate)
-        #        for inst, rate in engine_rates.items()
-        #    }
-
-        #    scenario["_engine_synced"] = True
-
-        #    print("Engine synced once for scenario")
-
-        #print("Scenario after syncing with engine defaults:", scenario)
-        # ---------------------------------------------------------
-        # ENFORCE GOVT INVESTMENT LIMITS
-        # ---------------------------------------------------------
-        #enforce_investment_caps(scenario, total_corpus, user_data)
 
         st.metric("Total Starting Corpus ", f"{currency}{total_corpus:,.0f}")
 
@@ -980,22 +843,6 @@ def render_investment_plan(user_data: dict, user: dict):
         plan["active_scenario"] = selected
         scenario = plan["scenarios"][selected]
 
-        #print("11# Selected scenario: before _active_scenario_loaded", scenario)
-        #print("11#Selected scenario allocations: before _active_scenario_loaded", scenario["allocations"])
-        #MAJOR CHANGE — force session state to update with scenario allocations on scenario change (fixes stale session state when switching scenarios)
-        #st.session_state.alloc_state = scenario["allocations"].copy()
-        #for k, v in scenario["allocations"].items():
-        #    st.session_state[f"alloc_{k}"] = float(v)
-
-        # --------------------------------------------------
-        # LOAD SESSION ONLY WHEN SCENARIO CHANGES
-        # --------------------------------------------------
-        #if st.session_state.get("_active_scenario_loaded") != selected:
-
-        #    st.session_state.alloc_state = scenario["allocations"].copy()
-
-        #    for k, v in scenario["allocations"].items():
-        #        st.session_state[f"alloc_{k}"] = float(v)
 
         #    st.session_state["_active_scenario_loaded"] = selected
         if st.session_state.get("_active_scenario_loaded") != selected:
@@ -1062,56 +909,9 @@ def render_investment_plan(user_data: dict, user: dict):
         else:
             st.info("Income stability and capital preservation focus.")
 
-        #total_corpus = sum(user_data.get("initial_corpus", {}).values())
-        #age = user_data.get("age")
-
-        #scenario = enforce_stage_investment_rules(scenario, stage, age)
-        #display_alloc = enforce_stage_investment_rules(
-        #    {"allocations": st.session_state.alloc_state.copy()},
-        #    stage,
-        #    age
-        #)["allocations"]
 
         display_alloc = st.session_state.alloc_state.copy()
 
-        #print("Display allocations after enforcing stage rules:", display_alloc)
-
-        #print("Scenario after enforcing stage rules:", scenario)
-        # ---------------------------------------------------------
-        # ENGINE ELIGIBILITY FILTER (NEW)
-        # ---------------------------------------------------------
-        #scenario_alloc = filter_instruments_by_age(
-        #    allocations=scenario["allocations"],
-        #    age=age
-        #)
-
-        # normalize after eligibility
-        #scenario_alloc = normalize_allocations(scenario_alloc)
-
-        #scenario["allocations"] = scenario_alloc
-
-        #print("Scenario allocations after age-based filtering:", scenario_alloc)
-        #scenario = enforce_stage_investment_rules(scenario, stage, age)
-
-        #scenario_alloc = scenario["allocations"]
-
-        # -------------------------------------------------
-        # FORCE SESSION STATE TO MATCH ENFORCED SCENARIO
-        # -------------------------------------------------
-        #for k, v in scenario_alloc.items():
-        #    st.session_state[f"alloc_{k}"] = float(v)
-
-        #st.session_state.alloc_state = scenario_alloc.copy()
-
-
-        #print("Scenario allocations 11111 after stage rule enforcement:", scenario_alloc)
-        # ---------- session state init ----------
-        #if "alloc_state" not in st.session_state:
-        #    st.session_state.alloc_state = scenario_alloc.copy()
-        #if "alloc_state" not in st.session_state:
-        #    st.session_state.alloc_state = {
-        #        k: float(v) for k, v in scenario_alloc.items()
-        #    }
 
         # ---------- POMIS joint ----------
         if "pomis_joint" not in st.session_state:
@@ -1518,3 +1318,454 @@ def render_investment_plan(user_data: dict, user: dict):
             "based on income, expenses, inflation and investment returns."
         )
 
+# =========================================================
+# MAIN UI
+# =========================================================
+
+def render_investment_plan_mobile(user_data: dict, user: dict):
+    st.header("📊 Income & Investment Strategy")
+    st.caption("See how your savings generate income and support your lifestyle.")
+
+    # ---------------------------------------------------------
+    # LIFE STAGE CONTEXT
+    # ---------------------------------------------------------
+    stage = _get_life_stage(user_data)
+    age = get_user_age(user_data)
+    
+    if stage == "early":
+        st.info("🌱 Wealth accumulation phase — focus on growth and contributions.")
+        st.caption("💡 Salary growth, investments, low withdrawals")
+    elif stage == "mid":
+        st.info("👨‍👩‍👧 Income + responsibility balance phase.")
+        st.caption("💡 Education costs, EMIs, long-term retirement planning")
+    else:
+        st.success("🏖 Income distribution phase — retirement cashflow planning.")
+        st.caption("💡 Pension, withdrawals, income sustainability")
+
+    is_guest = user.get("is_guest", False)
+    is_premium = user.get("is_premium", False)
+    country = user_data.get("country", "IN")
+    currency = get_currency(user_data)
+
+    user_data.setdefault("investment_plan", {})
+    user_data["investment_plan"].setdefault(country, {})
+    plan = user_data["investment_plan"][country]
+
+    ensure_scenarios(plan, country)
+    is_mobile = st.session_state.get("is_mobile", False)
+    active = plan.get("active_scenario", "Base")
+    scenario = plan["scenarios"][active]
+
+    default = _default_scenario(country)
+    for sc in plan["scenarios"].values():
+        for section in ["allocations", "rates", "income_sources", "withdrawal"]:
+            sc.setdefault(section, {})
+            for k, v in default[section].items():
+                sc[section].setdefault(k, v)
+
+    if not is_guest:
+        base = plan["scenarios"]["Base"]
+        if "Conservative" not in plan["scenarios"]:
+            plan["scenarios"]["Conservative"] = _derive_scenario(base, "conservative")
+        if "Aggressive" not in plan["scenarios"]:
+            plan["scenarios"]["Aggressive"] = _derive_scenario(base, "aggressive")
+    else:
+        base = plan["scenarios"]["Base"] 
+
+    editable = not is_guest
+
+    # =========================================================
+    # SECTION A — STARTING CORPUS
+    # =========================================================
+    with ui_section("Financial Foundation", "💼"):
+        st.subheader("💰 Your Current Savings")
+        corpus = user_data["initial_corpus"][country] 
+        total_corpus = round(sum(corpus.values()), 2)
+
+        allocation_model = build_allocation_model(country=country, age=age, corpus=total_corpus)
+        engine_default_alloc = allocation_model["allocations"]
+        engine_rates = allocation_model["rates"]
+
+        if not scenario.get("_engine_synced"):
+            scenario.setdefault("allocations", {})
+            scenario.setdefault("rates", {})
+            existing_alloc = scenario["allocations"]
+            existing_rates = scenario["rates"]
+
+            if not existing_alloc:
+                scenario["allocations"] = engine_default_alloc.copy()
+            else:
+                scenario["allocations"] = engine_default_alloc.copy()
+                scenario["allocations"] = {k: v for k, v in scenario["allocations"].items() if k in engine_default_alloc}
+            
+            scenario["allocations"] = normalize_allocations(scenario["allocations"], country=country)
+            scenario["rates"] = {inst: existing_rates.get(inst, engine_rates[inst]) for inst in engine_rates}
+            scenario["_engine_synced"] = True
+
+        st.metric("Total Starting Corpus ", f"{currency}{total_corpus:,.0f}")
+
+        if total_corpus == 0:
+            st.warning("Starting corpus is zero. Update Base Data.")
+
+        if stage == "early":
+            st.caption("📈 Corpus will grow mainly through new investments.")
+        elif stage == "mid":
+            st.caption("⚖ Corpus supports both growth and financial goals.")
+        else:
+            st.caption("💸 Corpus now supports retirement income withdrawals.")
+        st.divider()
+
+        # =========================================================
+        # SECTION C — EXTERNAL INCOME & WITHDRAWAL (MOBILE CARDS)
+        # =========================================================
+        st.subheader("💰 Other Income & Withdrawal")
+
+        if stage == "early":
+            st.info("Most income comes from work. Passive income optional.")
+        elif stage == "mid":
+            st.info("Multiple income streams strengthen financial stability.")
+        else:
+            st.success("Passive and retirement income become primary cashflow.")
+
+        st.markdown("### 💸 Other Income Sources")
+
+        INCOME_ICONS = {
+            "rental": "🏠", "pension": "🧓", "annuity": "📜",
+            "dividends": "📈", "social_security": "🏛️", "other": "➕",
+        }
+        INCOME_FREQUENCY = {
+            "rental": "monthly", "pension": "monthly", "annuity": "monthly",
+            "social_security": "monthly", "dividends": "yearly", "other": "yearly",
+        }
+
+        visible_sources = get_visible_income_sources(stage, country)
+
+        # Removed columns! Using vertical cards with toggles for mobile.
+        for key in visible_sources:
+            value = scenario["income_sources"].get(key, 0)
+            label = key.replace("_", " ").title()
+            icon = INCOME_ICONS.get(key, "💰")
+            frequency = INCOME_FREQUENCY.get(key, "monthly")
+
+            include_key = f"income_{active}_{key}_include"
+            value_key = f"income_{active}_{key}_value"
+
+            if include_key not in st.session_state:
+                st.session_state[include_key] = value > 0
+
+            with st.container(border=True):
+                include = st.toggle(
+                    f"{icon} **{label}**",
+                    key=include_key,
+                    disabled=not editable,
+                )
+
+                if include:
+                    label_text = f"Monthly Amount ({currency})" if frequency == "monthly" else f"Yearly Amount ({currency})"
+                    amount = st.number_input(
+                        label_text,
+                        min_value=0.0, step=1000.0, value=float(value if value > 0 else 5000),
+                        disabled=not editable, key=value_key,
+                        label_visibility="collapsed" # Save mobile space
+                    )
+
+                    if frequency == "monthly":
+                        annual_value = amount * 12
+                        st.caption(f"💡 Annual Equivalent: **{currency}{annual_value:,.0f}**")
+                    else:
+                        st.caption(f"💡 Annual Income: **{currency}{amount:,.0f}**")
+
+                    scenario["income_sources"][key] = amount
+                else:
+                    scenario["income_sources"][key] = 0.0
+
+        for k in list(scenario["income_sources"].keys()):
+            if k not in visible_sources:
+                scenario["income_sources"][k] = 0
+            
+        st.divider()
+        st.markdown("### 🔄 Systematic Withdrawal (SWP)")
+
+        with st.container(border=True):
+            if stage == "early":
+                st.caption("⚠ Withdrawals reduce long-term growth.")
+            elif stage == "mid":
+                st.caption("⚖ Withdraw only if needed for major goals.")
+            else:
+                st.caption("💰 Primary retirement income source.")
+
+            scenario["withdrawal"]["monthly"] = st.number_input(
+                f"Monthly Withdrawal ({currency})",
+                min_value=0.0, step=1000.0,
+                value=float(scenario["withdrawal"]["monthly"]),
+                disabled=not editable, key=f"withdrawal_{active}",
+            )
+            st.caption(f"📅 Yearly Impact: **{currency}{scenario['withdrawal']['monthly'] * 12:,.0f}**")
+
+        st.divider()
+
+    with ui_section("Lifestyle Cost Context", "🏡"):
+        expense_totals = render_expense_summary(user_data, currency=currency)
+
+    with ui_section("Planning Scenario", "🎯"):
+        st.subheader("🧪 Your Future Plans")
+        st.caption("Compare different approaches to managing your retirement income.")
+
+        scenario_names = list(plan["scenarios"].keys())
+        selected = st.selectbox(
+            "Active Scenario",
+            scenario_names,
+            index=scenario_names.index(plan["active_scenario"]),
+            disabled=False,
+        )
+
+        plan["active_scenario"] = selected
+        scenario = plan["scenarios"][selected]
+
+        if st.session_state.get("_active_scenario_loaded") != selected:
+            scenario_alloc = filter_instruments_by_age(allocations=scenario["allocations"], age=age, country=country)
+            scenario_alloc = normalize_allocations(scenario_alloc, country=country)
+            scenario["allocations"] = scenario_alloc
+            st.session_state.alloc_state = scenario_alloc.copy()
+            for k, v in scenario_alloc.items():
+                st.session_state[f"alloc_{k}"] = float(v)
+            st.session_state["_active_scenario_loaded"] = selected
+
+        # Mobile friendly full-width buttons instead of columns
+        if not is_guest:
+            st.button("➕ Clone Scenario", disabled=len(scenario_names) >= 3, use_container_width=True, on_click=lambda: _clone_scen(plan, scenario_names, scenario))
+            if active != "Base":
+                st.button("🗑 Delete Scenario", use_container_width=True, type="primary", on_click=lambda: _del_scen(plan, active))
+        st.divider()
+
+    with ui_section("Investment Allocation Strategy", "📈"):
+        st.subheader("💰 Where Your Money Is Invested")
+
+        if stage == "early":
+            st.info("Higher growth allocation usually appropriate.")
+        elif stage == "mid":
+            st.info("Balanced allocation between growth and stability.")
+        else:
+            st.info("Income stability and capital preservation focus.")
+
+        display_alloc = st.session_state.alloc_state.copy()
+
+        if "pomis_joint" not in st.session_state:
+            st.session_state.pomis_joint = False
+
+        pomis_limit = POMIS_MAX_JOINT if st.session_state.pomis_joint else POMIS_MAX_SINGLE
+        scss_pct_cap = percent_from_amount(SCSS_MAX_INVESTMENT, total_corpus)
+        pomis_pct_cap = percent_from_amount(pomis_limit, total_corpus)
+
+        with st.container(border=True):
+            st.markdown("### 🛡 Investment Limits")
+            if country == "IN":
+                if age and age < SCSS_MIN_AGE:
+                    st.info("SCSS not available below age 60")
+                else:
+                    st.info(f"SCSS max allowed: {scss_pct_cap:.2f}%")
+                st.checkbox("Joint POMIS account", key="pomis_joint")
+                st.info(f"POMIS max allowed: {pomis_pct_cap:.2f}%")
+            elif country == "US":
+                st.info("401(k) and IRA limits depend on age and income.")
+            elif country == "UK":
+                st.info("Pension and ISA limits depend on age and income.")
+
+        def allocation_changed(inst):
+            st.session_state.alloc_state[inst] = st.session_state[f"alloc_{inst}"]
+            alloc = st.session_state.alloc_state.copy()
+
+            if age is None or age < SCSS_MIN_AGE:
+                alloc["SCSS"] = 0
+            if alloc.get("SCSS", 0) > scss_pct_cap:
+                surplus = alloc["SCSS"] - scss_pct_cap
+                alloc["SCSS"] = scss_pct_cap
+                alloc["SWP"] += surplus
+            if alloc.get("POMIS", 0) > pomis_pct_cap:
+                surplus = alloc["POMIS"] - pomis_pct_cap
+                alloc["POMIS"] = pomis_pct_cap
+                alloc["SWP"] += surplus
+
+            alloc = redistribute_remaining(alloc, inst) 
+            if age is None or age < SCSS_MIN_AGE:
+                alloc["SCSS"] = 0
+
+            alloc["SCSS"] = min(alloc["SCSS"], scss_pct_cap)
+            alloc["POMIS"] = min(alloc["POMIS"], pomis_pct_cap)
+            
+            st.session_state.alloc_state = alloc
+            for k, v in alloc.items():
+                st.session_state[f"alloc_{k}"] = v
+            scenario["allocations"] = alloc
+
+        st.markdown("### ✏️ Edit Allocation (%)")
+        STAGE_PRIORITY_ALLOC = {
+            "early": ["SWP"], "mid": ["FD", "SWP"],
+            "retirement": ["POMIS", "FD"] + (["SCSS"] if age and age >= 60 else [])
+        }
+        priority_instruments = STAGE_PRIORITY_ALLOC.get(stage, [])
+
+        with st.container(border=True):
+            for key, label in _allocation_fields(country):
+                disabled = False
+                if key == "SCSS" and (age is None or age < SCSS_MIN_AGE):
+                    disabled = True
+                if key == "SCSS":
+                    label = f"{label} (max {scss_pct_cap:.1f}%)"
+                if key == "POMIS":
+                    label = f"{label} (max {pomis_pct_cap:.1f}%)"
+                if key in priority_instruments:
+                    label = f"⭐ {label}"
+
+                st.number_input(
+                    label,
+                    min_value=float(0), max_value=float(100),
+                    value=float(st.session_state.alloc_state.get(key, 0.0)),
+                    step=float(1), key=f"alloc_{key}",
+                    disabled=disabled, on_change=allocation_changed, args=(key,)
+                )
+
+        total_alloc = sum(st.session_state.alloc_state.values())
+        if round(total_alloc, 2) != 100:
+            st.warning(f"Total allocation = {total_alloc:.2f}% (auto balanced to 100%)")
+        else:
+            st.success("Allocation balanced at 100%")
+
+        df_alloc = pd.DataFrame(list(st.session_state.alloc_state.items()), columns=["Instrument", "Allocation"])
+        fig = px.pie(df_alloc, values="Allocation", names="Instrument", hole=0.45, title="Allocation Mix")
+        fig.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=40, b=0))
+        st.plotly_chart(fig, use_container_width=True)
+
+        scenario["allocations"] = normalize_allocations(st.session_state.alloc_state.copy(), country=country)
+
+        # ---------------------------------------------------------
+        # ALLOCATION BREAKDOWN (Mobile Cards instead of Wide Table)
+        # ---------------------------------------------------------
+        st.markdown("### 🧮 Allocation Breakdown")
+        alloc_total = 0.0
+        
+        for key, label in _allocation_fields(country):
+            alloc = float(scenario["allocations"].get(key, 0))
+            if alloc > 0:
+                rate = float(scenario["rates"][key])
+                allocated_amt = round(total_corpus * alloc / 100, 2)
+                annual_income = round(allocated_amt * rate / 100, 2)
+
+                with st.container(border=True):
+                    col1, col2 = st.columns([1,1])
+                    with col1:
+                        st.markdown(f"**{label}**")
+                        st.caption(f"{alloc}% @ {rate}% Rate")
+                    with col2:
+                        st.markdown(f"**{currency}{allocated_amt:,.0f}**")
+                        st.caption(f"+ {currency}{annual_income:,.0f}/yr")
+            alloc_total += alloc
+
+        if alloc_total != 100:
+            st.warning(f"Allocation totals {alloc_total}%. Recommended: 100%.")
+        st.divider()
+
+    with ui_section("Projected Financial Growth", "📊"):
+        st.subheader("💰 Projections")
+        if stage == "retirement":
+            st.caption("Monitor corpus sustainability carefully.")
+
+        st.metric("Number of Planning Years", user_data["GLProjectionYears"]["input"])
+
+        scenario["allocations"], _ = apply_instrument_caps(total_corpus, scenario["allocations"], age)
+        scenario["allocations"] = apply_instrument_caps(total_corpus, scenario["allocations"], age)[0]
+
+        display_alloc = enforce_stage_investment_rules({"allocations": st.session_state.alloc_state.copy()}, stage, age)["allocations"]
+        scenario["allocations"]["SCSS"] = 0 if age is None or age < SCSS_MIN_AGE else scenario["allocations"]["SCSS"]
+
+        result = calculate_projections(user_data, user)
+        active_res = result.get("active_result", {})
+        projections = active_res.get("projections", [])
+
+        if not projections:
+            st.info("Complete inputs to view projections.")
+            return
+
+        # Hide the massive table in an expander for mobile screens!
+        with st.expander("📄 View Year-by-Year Raw Data"):
+            df = pd.DataFrame(projections)
+            st.dataframe(df, use_container_width=True)
+
+    with ui_section("Growth Visualisation", "📉"):
+        st.subheader("📈 Income Contribution by Instrument")
+        if not projections:
+            st.info("Complete inputs to view projections.")
+        else:
+            df = pd.DataFrame(projections)
+            income_cols = [c for c in df.columns if c.endswith("Income") and c != "TotalIncome"]
+
+            if income_cols:
+                fig_income_sources = px.line(
+                    df, x="Year", y=income_cols, markers=True,
+                    title="Annual Income by Instrument",
+                    labels={"value": "Annual Income", "variable": "Instrument"},
+                )
+                fig_income_sources.update_layout(template="plotly_white", legend_title="Income Source", height=320 if is_mobile else 500)
+                st.plotly_chart(fig_income_sources, use_container_width=True)
+            else:
+                st.info("No instrument-level income data available.")
+
+        if "EndingCorpus" in df.columns:
+            fig_corpus = px.line(df, x="Year", y="EndingCorpus", markers=True, title=f"Ending Corpus — {active_res.get('scenario', 'Base')} Scenario")
+            fig_corpus.update_layout(height=320 if is_mobile else 500)
+            st.plotly_chart(fig_corpus, use_container_width=True)
+
+        cols = [c for c in ["TotalIncome", "TotalExpenses", "NetIncomeAfterTax"] if c in df.columns]
+        if cols:
+            fig_inc_exp = px.line(df, x="Year", y=cols, markers=True, title="Income vs Expenses")
+            fig_inc_exp.update_layout(height=320 if is_mobile else 500)
+            st.plotly_chart(fig_inc_exp, use_container_width=True)
+
+        # =========================================================
+        # SECTION E — SCENARIO COMPARISON (MOBILE CARDS)
+        # =========================================================
+        st.subheader("💰 Scenario Comparison")
+        results_by_scenario = result.get("results_by_scenario", {})
+        comparison_rows = []
+        
+        for name, sc_result in results_by_scenario.items():
+            projections = sc_result.get("projections", [])
+            if not projections:
+                continue
+            first = projections[0]
+            last = projections[-1]
+            comparison_rows.append({
+                "Scenario": name,
+                "Ending Corpus": last.get("EndingCorpus", 0),
+                "Total Income (Y1)": first.get("TotalIncome", 0),
+                "Total Expenses (Y1)": first.get("TotalExpenses", 0),
+                "Net Income After Tax (Y1)": first.get("NetIncomeAfterTax", 0),
+            })
+
+        if comparison_rows:
+            # Replaced comparison Dataframe with beautiful stacked cards!
+            for row in comparison_rows:
+                with st.container(border=True):
+                    st.markdown(f"### {row['Scenario']}")
+                    st.metric("Final Ending Corpus", f"{currency}{row['Ending Corpus']:,.0f}")
+                    st.caption(f"Year 1 Net Income: **{currency}{row['Net Income After Tax (Y1)']:,.0f}**")
+
+            df_cmp = pd.DataFrame(comparison_rows)
+            fig_cmp = px.bar(
+                df_cmp, x="Scenario", y="Ending Corpus", title="Ending Corpus Comparison",
+                text_auto=".2s", color="Scenario", color_discrete_sequence=["#6366f1", "#22c55e", "#ef4444"],
+            )
+            fig_cmp.update_layout(height=350 if is_mobile else 500)
+            st.plotly_chart(fig_cmp, use_container_width=True)
+            
+        st.caption("These charts illustrate how your financial position evolves based on income, expenses, inflation and investment returns.")
+
+# Helper functions for the buttons (Add these right above the render_investment_plan function)
+def _clone_scen(plan, scenario_names, scenario):
+    new_name = f"Scenario {len(scenario_names)}"
+    plan["scenarios"][new_name] = copy.deepcopy(scenario)
+    plan["active_scenario"] = new_name
+
+def _del_scen(plan, active):
+    del plan["scenarios"][active]
+    plan["active_scenario"] = "Base"

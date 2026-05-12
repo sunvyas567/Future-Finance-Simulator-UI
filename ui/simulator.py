@@ -739,22 +739,35 @@ def run_simulator(is_guest: bool = False):
         render_expenses(config=config, user_data=user_data, user=user)
 
     elif page == "Your Income Sources & Investment Strategy":
-        from ui.investment_plan import render_investment_plan
-        render_investment_plan(user_data=user_data, user=user)
+        from ui.investment_plan import render_investment_plan,render_investment_plan_mobile
+        if is_mobile:
+            render_investment_plan_mobile(user_data=user_data, user=user)
+        else:
+            render_investment_plan(user_data=user_data, user=user)
 
     elif page == "Your Financial Outlook Report":
-        from ui.summary import render_summary
+        from ui.summary import render_summary,render_summary_mobile
         if not projections or not base_context:
             st.warning("Please complete inputs to view summary.")
             return
-        render_summary(
-            projections=projections,
-            user_data=user_data,
-            user=user,
-            base_context=base_context,
-            life_stage=result["life_stage"],
-            stage_metrics=result["life_stage_metrics"]
-        )
+        if is_mobile:
+                render_summary_mobile(
+                    projections=projections,
+                    user_data=user_data,
+                    user=user,
+                    base_context=base_context,
+                    life_stage=result["life_stage"],
+                    stage_metrics=result["life_stage_metrics"]
+                )
+        else:
+            render_summary(
+                projections=projections,
+                user_data=user_data,
+                user=user,
+                base_context=base_context,
+                life_stage=result["life_stage"],
+                stage_metrics=result["life_stage_metrics"]
+            )
 
     elif page == "Upgrade":
         render_payments(user["username"])

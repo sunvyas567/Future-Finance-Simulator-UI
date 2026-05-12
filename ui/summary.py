@@ -613,3 +613,263 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
                 )
         else:
             st.info("Upgrade to Premium to download PDF reports.")
+
+# -------------------------------------------------
+# MAIN SUMMARY
+# -------------------------------------------------
+def render_summary_mobile(projections, user_data, user, base_context, life_stage=None, stage_metrics=None):
+    st.title("📊 Financial Outcome Summary")
+
+    is_mobile = st.session_state.get("is_mobile", False)
+    fig_ot = go.Figure()
+    fig_rec = go.Figure()
+    
+    with section("Scenario Overview", "Your financial outcome based on current inputs"):
+        if not projections or not isinstance(base_context, dict):
+            st.warning("Complete inputs to view summary.")
+            return
+
+        meta = base_context["_meta"]
+        currency = meta.get("currency", "₹")
+        scenario_name = meta.get("scenario", "Base")
+
+        st.caption(
+            f"🌍 {meta.get('country_label')} | "
+            f"📌 Scenario: **{scenario_name}** | "
+            f"💱 Currency: {currency}"
+        )
+
+    # ======================================================
+    # 👤 LIFE STAGE INSIGHTS (Mobile Stacked Cards)
+    # ======================================================
+    if life_stage and stage_metrics:
+        with section("👤 Life Stage Profile", "Your current financial phase"):
+            stage_labels = {
+                "fire": "🟢 FIRE Builder",
+                "wealth": "🟡 Wealth Builder",
+                "pre_retire": "🟠 Pre-Retirement Planner",
+                "retired": "🔵 Retirement Income Mode"
+            }
+            st.success(stage_labels.get(life_stage, life_stage))
+
+            # Stacked instead of columns
+            for label, value in stage_metrics.items():
+                with st.container(border=True):
+                    st.metric(label, value)
+
+    with section("🏆 Retirement Readiness", "Overall health of your plan"):
+        df = pd.DataFrame(projections)
+        year1 = df.iloc[0]
+        score, breakdown = compute_retirement_score(df, base_context)
+
+        st.markdown("## 🏆 Retirement Readiness Score")
+        
+        # Stacked Score & Progress for mobile
+        st.metric("Overall Score", f"{score} / 100")
+        st.progress(score / 100)
+
+        if score >= 80:
+            st.success("You are on track for a confident retirement 🎯")
+        elif score >= 60:
+            st.warning("You are moderately prepared. Some adjustments recommended.")
+        else:
+            st.error("Retirement plan needs strengthening.")
+
+        st.markdown("### 📊 Score Breakdown")
+        breakdown_df = pd.DataFrame({"Category": breakdown.keys(), "Score": breakdown.values()})
+        fig_score = px.bar(breakdown_df, x="Category", y="Score", color="Score", color_continuous_scale="Blues")
+        
+        # Tighter mobile layout
+        fig_score.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=20, b=0))
+        st.plotly_chart(fig_score, use_container_width=True)
+
+    # -------------------------------------------------
+    # Key Numbers (Top) - Stacked Mobile Layout
+    # -------------------------------------------------
+    starting_corpus = safe_get(base_context, ["initial_corpus", "total"], 0)
+    
+    with section("🔑 Year-1 Financial Snapshot"):
+        # Removed 4-column layout; stacked in clean bordered containers
+        with st.container(border=True):
+            st.metric("Starting Corpus", f"{currency}{starting_corpus:,.0f}")
+        with st.container(border=True):
+            st.metric("Yearly Essential Living Costs", f"{currency}{year1['AnnualMustExpenses']:,.0f}")
+        with st.container(border=True):
+            st.metric("Yearly Leisure Costs", f"{currency}{year1['AnnualOptionalExpenses']:,.0f}")
+        with st.container(border=True):
+            st.metric("Take-home Income (Post-Tax)", f"{currency}{year1['NetIncomeAfterTax']:,.0f}")
+
+    with section("📈 Financial Trajectory", "Income, savings and tax evolution"):
+        st.markdown("**📈 Will My Income Cover My Expenses?**")
+        fig_ie = px.line(df, x="Year", y=["TotalIncome", "TotalExpenses"], markers=True, color_discrete_sequence=["#22c55e", "#ef4444"])
+        fig_ie.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_ie, use_container_width=True)
+
+        st.markdown("**💰 Corpus Growth Over Time**")
+        fig_corpus = px.area(df, x="Year", y="EndingCorpus", color_discrete_sequence=["#6366f1"])
+        fig_corpus.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_corpus, use_container_width=True)
+
+        st.markdown("**🧾 Tax Impact**")
+        fig_tax = px.line(df, x="Year", y=["TotalTax", "NetIncomeAfterTax"], markers=True, color_discrete_sequence=["#f59e0b", "#22c55e"])
+        fig_tax.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_tax, use_container_width=True)
+
+    # -------------------------------------------------
+    # PDF Export Generation (Logic preserved)
+    # -------------------------------------------------
+    income_expense_png = None
+    corpus_png = None
+    country = user_data.get("country")
+
+    onetime = user_data.get("onetime_expenses", {}).get(country, {})
+    onetime_rows = [{"Category": k, "Amount": v.get("input", 0)} for k, v in onetime.items() if v.get("input", 0) > 0]
+    onetime_chart_html = ""
+    
+    if onetime_rows:
+        df_ot = pd.DataFrame(onetime_rows)
+        fig_ot = px.pie(df_ot, names="Category", values="Amount", title="One-Time Expenses")
+        fig_ot.update_layout(
+            showlegend=True, legend=dict(font=dict(color="black"), orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
+            font=dict(color="#111827"), paper_bgcolor="white", plot_bgcolor="white", template="plotly_white",
+        )
+        
+    recurring = user_data.get("recurring_expenses", {}).get(country, {})
+    recurring_rows = []
+    for k, v in recurring.items():
+        yearly = v.get("monthly", 0) * 12
+        if yearly > 0:
+            recurring_rows.append({"Category": k, "Amount": yearly})
+
+    recurring_chart_html = ""
+    if recurring_rows:
+        df_rec = pd.DataFrame(recurring_rows)
+        fig_rec = px.pie(df_rec, names="Category", values="Amount", title="Recurring Expenses (Year 1)")
+        fig_rec.update_traces(textinfo="label+percent", textposition="inside", insidetextorientation="radial", showlegend=True)
+        fig_rec.update_layout(
+            showlegend=True, legend=dict(orientation="v", font=dict(color="black")),
+            font=dict(color="#111827"), paper_bgcolor="white", plot_bgcolor="white", template="plotly_white",
+        )
+
+    expense_growth_chart_html = ""
+    if not df.empty:
+        fig_exp_growth = px.line(
+            df, x="Year", y=["AnnualMustExpenses", "AnnualOptionalExpenses", "TotalExpenses"],
+            markers=True, color_discrete_sequence=["#6366f1", "#22c55e", "#f59e0b", "#ef4444"], title="Expense Growth Over Time"
+        )
+        fig_exp_growth.update_layout(template="plotly_white", legend_title="Expense Growth Over Time")
+        
+    # PDF generation calls
+    fig_ot = style_chart_for_pdf(fig_ot)
+    onetime_chart_html = fig_ot.to_html(full_html=False, include_plotlyjs=False)
+    fig_rec = style_chart_for_pdf(fig_rec)
+    recurring_chart_html = fig_rec.to_html(full_html=False, include_plotlyjs=False)
+    fig_exp_growth = style_chart_for_pdf(fig_exp_growth)
+    fig_ie = style_chart_for_pdf(fig_ie)
+    fig_corpus = style_chart_for_pdf(fig_corpus)
+    fig_tax = style_chart_for_pdf(fig_tax)
+    income_expense_chart_html = fig_ie.to_html(full_html=False, include_plotlyjs=False)
+    corpus_chart_html = fig_corpus.to_html(full_html=False, include_plotlyjs=False)
+    tax_chart_html = fig_tax.to_html(full_html=False, include_plotlyjs=False)
+
+    # -------------------------------------------------
+    # Expense Structure UI (Stacked for Mobile)
+    # -------------------------------------------------
+    with section("💸 Expense Structure", "Where your money goes"):
+        # Removed columns to stack charts naturally
+        if onetime_rows:
+            fig_ot.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=40, b=0))
+            st.plotly_chart(fig_ot, use_container_width=True)
+
+        if recurring_rows:
+            fig_rec.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=40, b=0))
+            st.plotly_chart(fig_rec, use_container_width=True)
+
+        if not df.empty:
+            fig_exp_growth.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=40, b=0))
+            st.plotly_chart(fig_exp_growth, use_container_width=True)
+
+    # -------------------------------------------------
+    # Scenario Comparison UI (Cards + Expander)
+    # -------------------------------------------------
+    with section("🔀 Scenario Comparison", "Compare financial outcomes"):
+        scenario_results = base_context.get("scenario_results", {})
+        rows = []
+        for name, proj in scenario_results.items():
+            df_s = pd.DataFrame(proj)
+            last = df_s.iloc[-1]
+            rows.append({
+                "Scenario": name,
+                "Ending Corpus": last["EndingCorpus"],
+                "Year-1 Income": df_s.iloc[0]["TotalIncome"],
+                "Year-1 Expenses": df_s.iloc[0]["TotalExpenses"],
+                "Year-1 Net Income": df_s.iloc[0]["NetIncomeAfterTax"],
+            })
+
+        if rows:
+            # Display beautifully as cards
+            for row in rows:
+                with st.container(border=True):
+                    st.markdown(f"### {row['Scenario']}")
+                    st.metric("Ending Corpus", f"{currency}{row['Ending Corpus']:,.0f}")
+                    st.caption(f"Year-1 Net Income: **{currency}{row['Year-1 Net Income']:,.0f}**")
+
+            cmp_df = pd.DataFrame(rows)
+            
+            # Hide the raw data frame table to prevent horizontal scrolling
+            with st.expander("📄 View Comparison Data Table"):
+                st.dataframe(cmp_df, use_container_width=True)
+
+            fig = px.bar(
+                cmp_df, x="Scenario", y="Ending Corpus", color="Scenario",
+                color_discrete_sequence=["#6366f1", "#22c55e", "#ef4444"],
+            )
+            fig.update_layout(height=350 if is_mobile else 500, margin=dict(l=0, r=0, t=20, b=0))
+            st.plotly_chart(fig, use_container_width=True)
+
+    with section("🧠 Advisor Insights"):
+        try:
+            advice = get_advisor_recommendations(
+                projections=projections,
+                base_context=base_context,
+                scenario=user_data["investment_plan"]["scenarios"][scenario_name],
+                user_data=user_data,
+            )
+            render_advisor_panel(advice)
+        except Exception:
+            st.info("Advisor insights unavailable.")
+
+    with section("📄 Report Export"):
+        if user.get("is_premium"):
+            st.markdown("Download a comprehensive PDF version of this outlook.")
+            if st.button("📥 Download Detailed Financial Report (PDF)", use_container_width=True, type="primary"):
+                with st.spinner("Generating PDF report..."):
+                    pdf_bytes = generate_financial_summary_pdf_playwright(
+                        username=user["username"],
+                        base_context=base_context,
+                        projection_df=df,
+                        currency=currency,
+                        retirement_score=score,
+                        score_breakdown=breakdown,
+                        advisor_advice=advice,
+                        income_expense_chart_html=income_expense_chart_html,
+                        corpus_chart_html=corpus_chart_html,
+                        tax_chart_html=tax_chart_html,
+                        scenario_comparison_df=cmp_df,
+                        onetime_chart_html=onetime_chart_html,
+                        recurring_chart_html=recurring_chart_html,
+                        expense_growth_chart_html=expense_growth_chart_html,
+                    )
+
+                    if isinstance(pdf_bytes, bytearray):
+                        pdf_bytes = bytes(pdf_bytes)
+
+                    st.download_button(
+                        "Click here to save your PDF",
+                        pdf_bytes,
+                        file_name=f"{user['username']}_{scenario_name}_summary.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+        else:
+            st.info("Upgrade to Premium to download detailed PDF reports.")
