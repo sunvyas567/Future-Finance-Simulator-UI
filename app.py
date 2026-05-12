@@ -71,21 +71,36 @@ st.markdown("""
 
 # ... Rest of your GLOBAL session initialization starts here ...
 
+from streamlit_javascript import st_javascript
+
+# 1. Fetch the window width from the browser synchronously
+window_width = st_javascript("window.innerWidth")
+
+# 2. Safely initialize the session state variable
+if "is_mobile" not in st.session_state:
+    st.session_state.is_mobile = False
+
+# 3. If we successfully got the width, evaluate and store it globally
+if window_width > 0:
+    st.session_state.is_mobile = (window_width < 768)
+
+# Now you can use it locally in app.py if needed
+#is_mobile = st.session_state.is_mobile
 #import streamlit as st
 
 # Simple mobile detection using query params fallback
 is_mobile = st.session_state.get("is_mobile", False)
 
-st.markdown("""
-<script>
-const isMobile = window.innerWidth < 768;
-window.parent.postMessage({
-  type: "streamlit:setComponentValue",
-  key: "is_mobile",
-  value: isMobile
-}, "*");
-</script>
-""", unsafe_allow_html=True)
+#st.markdown("""
+#<script>
+#const isMobile = window.innerWidth < 768;
+#window.parent.postMessage({
+###  type: "streamlit:setComponentValue",
+#  key: "is_mobile",
+#  value: isMobile
+#}, "*");
+#</script>
+#""", unsafe_allow_html=True)
 
 
 if not os.path.exists("/home/appuser/.cache/ms-playwright"):
