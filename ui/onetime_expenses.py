@@ -309,3 +309,166 @@ def render_onetime_expenses(config, user_data, user):
         height = 320 if is_mobile else 500
         fig.update_layout(height=height)
         st.plotly_chart(fig, use_container_width=True)
+
+# -------------------------------------------------
+# MAIN UI
+# -------------------------------------------------
+def render_onetime_expenses_mobile(config, user_data, user):
+    is_guest = user.get("is_guest", False)
+    is_premium = user.get("is_premium", False) if user else False
+    currency = get_currency(user_data)
+    country = user_data.get("country", "IN")
+
+    st.subheader("🏷 Big One-Time Costs")
+
+    # -------------------------------------------------
+    # Life stage context
+    # -------------------------------------------------
+    stage = _get_life_stage(user_data)
+
+    if stage == "early":
+        st.info("🌱 Plan major life milestones like education, vehicle purchase, or travel.")
+        st.caption("💡 Common: higher education, vehicle purchase, travel, career upgrade")
+    elif stage == "mid":
+        st.info("👨‍👩‍👧 Plan family goals like children education, home purchase, or life events.")
+        st.caption("💡 Common: children education, home renovation, marriage")
+    else:
+        st.success("🏖 Plan retirement lifestyle goals like travel, healthcare, or legacy gifting.")
+        st.caption("💡 Common: medical reserve, bucket-list travel, wealth transfer")
+
+    # Ensure country-scoped storage
+    user_data.setdefault("onetime_expenses", {})
+    user_data["onetime_expenses"].setdefault(country, {})
+    expenses = user_data["onetime_expenses"][country]
+
+    STAGE_PRIORITY = {
+        "early": ["Education", "Vehicle", "Travel"],
+        "mid": ["Children", "House", "Marriage", "Property"],
+        "retirement": ["Medical", "Healthcare", "Travel"]
+    }
+    priority_keywords = STAGE_PRIORITY.get(stage, [])
+
+    # Filter visible fields based on stage rules
+    input_fields = [f for f in config if "Field Default Value" in f and "Field Description" in f]
+    visible_fields = []
+
+    for field in input_fields:
+        key = field["Field Name"]
+        label = field["Field Description"]
+        stage_label = _apply_stage_rules(stage, key, label)
+        if stage_label is None:
+            expenses[key] = {"input": 0.0}
+            continue
+
+        field["__stage_label"] = stage_label
+        visible_fields.append(field)
+
+    # -------------------------------------------------
+    # Input fields (MOBILE OPTIMIZED CARD UI)
+    # -------------------------------------------------
+    for field in visible_fields:
+        key = field["Field Name"]
+        label = field.get("__stage_label", field["Field Description"])
+        default = float(field.get("Field Default Value", 0))
+        icon = FIELD_ICONS.get(key, "💸")
+        stored_value = float(expenses.get(key, {}).get("input", default))
+
+        include_key = f"onetime_{country}_{key}_include"
+        value_key = f"onetime_{country}_{key}_value"
+
+        if include_key not in st.session_state:
+            st.session_state[include_key] = stored_value > 0
+
+        # Full-width stacked card
+        with st.container(border=True):
+            base_label = field["Field Description"]
+            is_priority = any(k.lower() in base_label.lower() for k in priority_keywords)
+            
+            title_text = f"⭐ {icon} **{label}**" if is_priority else f"{icon} **{label}**"
+
+            # Combine title and checkbox into a clean native toggle
+            include = st.toggle(
+                title_text,
+                key=include_key,
+                disabled=is_guest or not is_premium
+            )
+
+            # Conditionally render the number input
+            if include:
+                value = st.number_input(
+                    f"Amount ({currency})",
+                    min_value=0.0,
+                    value=stored_value if stored_value > 0 else 50000.0, # Better starter value
+                    step=1000.0,
+                    disabled=is_guest or not is_premium,
+                    key=value_key,
+                    label_visibility="collapsed" # Hides the redundant label
+                )
+                if not is_guest:
+                    expenses[key] = {"input": value}
+            else:
+                if not is_guest:
+                    expenses[key] = {"input": 0.0}
+
+    # -------------------------------------------------
+    # Derived (formula) fields — MOBILE CARDS
+    # -------------------------------------------------
+    formula_fields = [f for f in config if isinstance(f.get("Field Input"), str) and f["Field Input"].startswith("=")]
+
+    derived_rows = []
+    for field in formula_fields:
+        key = field["Field Name"]
+        label = field.get("Field Description")
+        if not label:
+            continue
+        value = _eval_formula(field["Field Input"], expenses)
+        derived_rows.append({"Category": label, "Amount": value})
+
+    if derived_rows:
+        st.divider()
+        st.markdown("### 📊 Derived One-Time Costs")
+        
+        # Replace dataframe with stacked cards
+        for row in derived_rows:
+            with st.container(border=True):
+                # Very tight columns inside a card just for aligning Text left and Number right
+                col1, col2 = st.columns([2, 1]) 
+                with col1:
+                    st.write(f"**{row['Category']}**")
+                with col2:
+                    st.write(f"**{currency}{row['Amount']:,.0f}**")
+
+    # -------------------------------------------------
+    # Total (derived, single source of truth)
+    # -------------------------------------------------
+    total = sum(v.get("input", 0) for v in expenses.values())
+
+    st.divider()
+    with st.container(border=True):
+        st.metric("Total One-Time Expenses", f"{currency}{total:,.0f}")
+
+    # -------------------------------------------------
+    # Chart (country-safe)
+    # -------------------------------------------------
+    rows = []
+    for field in visible_fields:
+        name = field.get("Field Name")
+        label = field.get("Field Description")
+        if not name or not label:
+            continue
+        value = expenses.get(name, {}).get("input", 0)
+        if value > 0:
+            rows.append({"Category": label, "Amount": value})
+
+    if rows:
+        df = pd.DataFrame(rows)
+        fig = px.bar(
+            df, x="Category", y="Amount", text_auto=".2s",
+            title=f"Expense Breakdown ({currency})",
+        )
+        fig.update_traces(textposition="outside")
+        
+        # Pull global mobile state for chart height
+        is_mobile = st.session_state.get("is_mobile", False)
+        fig.update_layout(height=320 if is_mobile else 500, margin=dict(l=0, r=0, t=40, b=0))
+        st.plotly_chart(fig, use_container_width=True)

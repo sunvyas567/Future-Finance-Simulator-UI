@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from ui.onetime_expenses import render_onetime_expenses
-from ui.recurring_expenses import render_recurring_expenses
+from ui.onetime_expenses import render_onetime_expenses, render_onetime_expenses_mobile
+from ui.recurring_expenses import render_recurring_expenses, render_recurring_expenses_mobile
 
 # -------------------------------------------------
 # Recurring Expenses (COUNTRY-SCOPED)
@@ -55,7 +55,13 @@ def render_expenses(config, user_data, user):
     # -------------------------------
     #with st.expander("🏷 Big One-Time Costs", expanded=True):
     with st.expander("I🏷 Big One-Time Costs", expanded=not is_mobile):
-
+      if is_mobile:
+         render_onetime_expenses_mobile(
+            config=config["onetime_expenses"],
+            user_data=user_data,
+            user=user
+        )
+      else:
         render_onetime_expenses(
             config=config["onetime_expenses"],
             user_data=user_data,
@@ -70,7 +76,13 @@ def render_expenses(config, user_data, user):
     #print("user data passed to recurring expenses: KKKK", user_data)
     #with st.expander("🔁 Monthly Living Costs", expanded=True):
     with st.expander("🔁 Monthly Living Costs", expanded=not is_mobile):
-
+      if is_mobile:
+        render_recurring_expenses_mobile(
+            config=config["recurring_expenses"],
+            user_data=user_data,
+            user=user
+        )
+      else:
         render_recurring_expenses(
             config=config["recurring_expenses"],
             user_data=user_data,

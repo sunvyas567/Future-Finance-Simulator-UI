@@ -258,3 +258,167 @@ def render_recurring_expenses(config, user_data, user):
         height = 320 if is_mobile else 500
         fig.update_layout(height=height)
         st.plotly_chart(fig, width='stretch')
+
+# =========================================================
+# MAIN UI
+# =========================================================
+def render_recurring_expenses_mobile(config, user_data, user):
+    is_guest = user is None
+    is_premium = user.get("is_premium", False) if user else False
+    currency = get_currency(user_data)
+    country = user_data.get("country", "IN")
+
+    st.subheader("🔁 Monthly Living Expenses")
+
+    # --------------------------------------------------
+    # Life stage context
+    # --------------------------------------------------
+    stage = _get_life_stage(user_data)
+
+    if stage == "early":
+        st.info("🌱 Capture your living costs and lifestyle spending.")
+        st.caption("💡 Rent, food, transport, subscriptions")
+    elif stage == "mid":
+        st.info("👨‍👩‍👧 Capture full household expenses and dependents.")
+        st.caption("💡 Household costs, school fees, EMIs, insurance")
+    else:
+        st.success("🏖 Capture retirement living and healthcare expenses.")
+        st.caption("💡 Healthcare, assisted living, lifestyle maintenance")
+
+    # Ensure country-scoped storage
+    user_data.setdefault("recurring_expenses", {})
+    user_data["recurring_expenses"].setdefault(country, {})
+    expenses = user_data["recurring_expenses"][country]
+
+    input_fields = [f for f in config if _is_input_field(f)]
+    field_map = {f["Field Name"]: f for f in input_fields}
+
+    # --------------------------------------------------
+    # Country Templates (MOBILE FIX: Hidden in an Expander)
+    # --------------------------------------------------
+    templates = EXPENSE_TEMPLATES.get(country)
+
+    if templates and not is_guest:
+        # Wrap the template selection in an expander to save massive screen space
+        with st.expander("⚡ Quick Setup (Auto-fill Templates)"):
+            lifestyle = st.selectbox(
+                "Select a Lifestyle Baseline",
+                list(templates.keys()),
+                key="recurring_template",
+            )
+            if st.button("Apply Template", use_container_width=True):
+                for field, value in templates[lifestyle].items():
+                    if field in field_map:
+                        expenses[field] = {"monthly": float(value)}
+                st.success("Template applied! Adjust your values below.")
+            st.caption("Templates are indicative starting points.")
+
+    st.divider()
+    
+    STAGE_PRIORITY = {
+        "early": ["Rent", "Food", "Transport", "Lifestyle"],
+        "mid": ["House", "Education", "Insurance", "Family"],
+        "retirement": ["Medical", "Healthcare"]
+    }
+    priority_keywords = STAGE_PRIORITY.get(stage, [])
+
+    # --------------------------------------------------
+    # Render fields (MOBILE OPTIMIZED CARDS)
+    # --------------------------------------------------
+    for field in input_fields:
+        name = field["Field Name"]
+        label = field["Field Description"]
+        default = float(field.get("Field Default Value", 0))
+        stored_value = float(expenses.get(name, {}).get("monthly", default))
+
+        include_key = f"rec_{country}_{name}_include"
+        value_key = f"rec_{country}_{name}_value"
+
+        if include_key not in st.session_state:
+            st.session_state[include_key] = stored_value > 0
+
+        # Full-width stacked cards (No columns)
+        with st.container(border=True):
+            is_priority = any(k.lower() in label.lower() for k in priority_keywords)
+            title_text = f"⭐ 🔁 **{label}**" if is_priority else f"🔁 **{label}**"
+
+            # Clean iOS-style toggle
+            include = st.toggle(
+                title_text,
+                key=include_key,
+                disabled=is_guest or not is_premium
+            )
+
+            if include:
+                value = st.number_input(
+                    f"Monthly Amount ({currency})",
+                    min_value=0.0,
+                    value=stored_value if stored_value > 0 else 5000.0, # Better starter value
+                    step=500.0,
+                    disabled=is_guest or not is_premium,
+                    key=value_key,
+                    label_visibility="collapsed" # Save vertical space
+                )
+
+                yearly = value * 12
+                # Highlight the derived yearly impact
+                st.caption(f"📅 **Yearly Impact:** {currency}{yearly:,.0f}")
+
+                expenses[name] = {"monthly": value}
+            else:
+                expenses[name] = {"monthly": 0.0}
+
+    # --------------------------------------------------
+    # Compute totals (backend truth)
+    # --------------------------------------------------
+    must_yearly = 0.0
+    optional_yearly = 0.0
+
+    for name, data in expenses.items():
+        monthly = data.get("monthly", 0)
+        annual = monthly * 12
+        if name.endswith("Opt"):
+            optional_yearly += annual
+        else:
+            must_yearly += annual
+
+    user_data["AnnualMustExpenses"] = {"input": round(must_yearly, 2)}
+    user_data["AnnualOptionalExpenses"] = {"input": round(optional_yearly, 2)}
+
+    # --------------------------------------------------
+    # Snapshot (Stacked Metrics)
+    # --------------------------------------------------
+    st.divider()
+    
+    # Put the metrics in a clean card instead of side-by-side columns
+    with st.container(border=True):
+        st.markdown("### 💰 Expense Summary")
+        st.metric("Annual Mandatory Expenses", f"{currency}{must_yearly:,.0f}")
+        st.metric("Annual Optional Expenses", f"{currency}{optional_yearly:,.0f}")
+
+    # --------------------------------------------------
+    # Chart (defensive & responsive)
+    # --------------------------------------------------
+    rows = []
+    for name, data in expenses.items():
+        monthly = data.get("monthly", 0)
+        if monthly <= 0 or name not in field_map:
+            continue
+        rows.append({
+            "Category": field_map[name]["Field Description"],
+            "Annual": monthly * 12,
+        })
+
+    if rows:
+        df = pd.DataFrame(rows)
+        fig = px.pie(
+            df,
+            names="Category",
+            values="Annual",
+            title=f"Annual Expense Breakdown ({currency})",
+        )
+        
+        # Pull global mobile state for chart height
+        is_mobile = st.session_state.get("is_mobile", False)
+        fig.update_layout(height=320 if is_mobile else 500, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True)
