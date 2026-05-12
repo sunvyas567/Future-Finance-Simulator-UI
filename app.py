@@ -56,6 +56,16 @@ st.markdown("""
                 display: none !important;
             }
         }
+        /* Compress the vertical space between input widgets */
+        .stTextInput, .stNumberInput, .stSelectbox {
+            margin-bottom: -1rem !important;
+        }
+        
+        /* Make the labels smaller and closer to the inputs */
+        .stTextInput label, .stNumberInput label, .stSelectbox label {
+            font-size: 12px !important;
+            padding-bottom: 0px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -110,7 +120,7 @@ if "username" not in st.session_state:
 # -------------------------------------------------------------------
 # UI RENDERERS
 # -------------------------------------------------------------------
-def render_landing():
+def render_landing_old():
     st.title("Visualize Your Financial Future in Minutes")
    
 #    st.markdown("""
@@ -274,7 +284,50 @@ def render_landing():
 
     st.markdown("---")
 
+def render_landing():
+    st.title("Financial Life Planner")
+    st.subheader("Visualize Your Financial Future in Minutes")
+    
+    st.markdown("---")
 
+    # Mobile-Friendly Button Stack (No columns!)
+    with st.container(border=True):
+        st.markdown("### 📊 Try it out")
+        st.caption("Try the simulator with sample data. No sign-up required.")
+        if st.button("Try Demo", use_container_width=True, type="primary"):
+            st.session_state.view = "demo"
+            st.rerun()
+
+    with st.container(border=True):
+        st.markdown("### 🚀 Get Started Free")
+        st.caption("Create an account to save plans and unlock features.")
+        if st.button("Create Account", use_container_width=True):
+            st.session_state.view = "register"
+            st.rerun()
+
+    with st.container(border=True):
+        st.markdown("### 👤 Welcome Back")
+        st.caption("Access your saved plans and premium features.")
+        if st.button("Login", use_container_width=True):
+            st.session_state.view = "login"
+            st.rerun()
+
+    st.markdown("---")
+
+    # Mobile-Friendly Feature List (Stacked Cards)
+    st.markdown("### 💡 What This Tool Helps You Do")
+    
+    with st.container(border=True):
+        st.markdown("**🔄 Life-Stage Intelligent Planning**")
+        st.markdown("🌱 Early — Build income & assets\n\n🏡 Mid — Manage family & wealth\n\n🏖 Retirement — Preserve & draw income")
+
+    with st.container(border=True):
+        st.markdown("**📊 What Makes This Different?**")
+        st.markdown("- Scenario-based projections\n- Stage-aware planning logic\n- Integrated income + expense modeling\n- Financial trajectory forecasting")
+
+    with st.container(border=True):
+        st.markdown("**📈 Three Scenarios**")
+        st.markdown("🟢 Base — Balanced strategy\n\n🟡 Conservative — Safety focused\n\n🔴 Aggressive — Growth focused")
 
 def render_demo():
     st.info("You are using Demo Mode with sample data.")
@@ -423,7 +476,10 @@ def render_app():
 view = st.session_state.view
 
 if view == "landing":
-    render_landing()
+    if is_mobile:
+        render_landing()
+    else:
+        render_landing_old()
 elif view == "demo":
     render_demo()
 elif view in ("login", "register"):

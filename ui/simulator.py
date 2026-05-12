@@ -283,6 +283,147 @@ def clone_scenario(base: dict) -> dict:
     import copy
     return copy.deepcopy(base)
 
+#Welcome Page
+def render_welome_page():
+        #st.header("About the App")
+        st.title("Plan Your Financial Future With Confidence")
+        st.subheader("A simple, powerful tool to understand your future income, expenses, and savings.")
+        
+        st.markdown("""
+        ## 👋 Welcome to Your Smart Financial Planner
+
+        Plan smarter. Invest better. Retire with confidence.
+
+        """)
+
+        st.markdown("### 🎯 What you can do here")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("""
+            ### 💰 Money & Expenses
+            - Track lifestyle costs  
+            - Plan major life goals  
+            - Estimate yearly spending  
+            """)
+
+        with col2:
+            st.markdown("""
+            ### 📈 Investments & Growth
+            - Choose investment mix  
+            - Compare strategies  
+            - See long-term projections  
+            """)
+
+        with col3:
+            st.markdown("""
+            ### 🏖 Finance Readiness
+            - Check income sustainability  
+            - Estimate corpus longevity  
+            - Visualize future wealth  
+            """)
+
+        st.markdown("---")
+
+
+        st.markdown("### 🔮 Explore Different Financial Futures")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("""
+            🟢 **Base Scenario**  
+            Balanced growth with realistic assumptions.
+            """)
+
+        with col2:
+            st.markdown("""
+            🟡 **Conservative Scenario**  
+            Stability first. Lower risk approach.
+            """)
+
+        with col3:
+            st.markdown("""
+            🔴 **Aggressive Scenario**  
+            Higher growth with higher risk.
+            """)
+
+        st.markdown("---")
+
+
+        st.markdown("""
+        ### 🚀 Why people love this simulator
+
+        ✔ Simple and intuitive  
+        ✔ Adapts to your life stage  
+        ✔ Visual projections — not guesswork  
+        ✔ Multi-scenario planning in seconds  
+
+        """)
+
+        st.success("💡 In just a few minutes, see if your future lifestyle is financially secure.")
+
+        
+        st.info(
+            "Designed for everyday individuals — no financial background required."
+        )
+        st.success(
+            "👉 Start by entering your details in 'Your Profile' to see your personalized retirement outlook."
+        )
+
+def render_welcome_page_mobile():
+        st.title("Plan Your Financial Future With Confidence")
+        st.caption("A simple, powerful tool to understand your future income, expenses, and savings.")
+        
+        st.markdown("---")
+
+        # Section 1: Features (Stacked Cards instead of Columns)
+        st.markdown("### 🎯 What you can do here")
+
+        with st.container(border=True):
+            st.markdown("#### 💰 Money & Expenses")
+            st.markdown("- Track lifestyle costs\n- Plan major life goals\n- Estimate yearly spending")
+
+        with st.container(border=True):
+            st.markdown("#### 📈 Investments & Growth")
+            st.markdown("- Choose investment mix\n- Compare strategies\n- See long-term projections")
+
+        with st.container(border=True):
+            st.markdown("#### 🏖 Finance Readiness")
+            st.markdown("- Check income sustainability\n- Estimate corpus longevity\n- Visualize future wealth")
+
+        st.markdown("---")
+
+        # Section 2: Scenarios (Stacked Cards)
+        st.markdown("### 🔮 Explore Different Financial Futures")
+
+        with st.container(border=True):
+            st.markdown("🟢 **Base Scenario**\n\nBalanced growth with realistic assumptions.")
+
+        with st.container(border=True):
+            st.markdown("🟡 **Conservative Scenario**\n\nStability first. Lower risk approach.")
+
+        with st.container(border=True):
+            st.markdown("🔴 **Aggressive Scenario**\n\nHigher growth with higher risk.")
+
+        st.markdown("---")
+
+        # Section 3: Value Proposition & Call to Action
+        st.markdown("### 🚀 Why people love this simulator")
+        
+        # Wrapping the bullet points in a card makes it pop on mobile
+        with st.container(border=True):
+            st.markdown(
+                "✔ Simple and intuitive\n\n"
+                "✔ Adapts to your life stage\n\n"
+                "✔ Visual projections — not guesswork\n\n"
+                "✔ Multi-scenario planning in seconds"
+            )
+
+        st.info("💡 Designed for everyday individuals — no financial background required.")
+        
+        st.success("👉 Tap on 'Your Financial Profile' in the menu above to start your personalized retirement outlook.")
 # -------------------------------------------------------------------
 # MAIN SIMULATOR
 # -------------------------------------------------------------------
@@ -290,6 +431,10 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     # 1. USER CONTEXT
     # ==========================================================
+    #is_mobile = st.session_state.is_mobile
+    # Simple mobile detection using query params fallback
+    is_mobile = st.session_state.get("is_mobile", False)
+
     user = get_user_context(is_guest)
 
     # ---------------- Sidebar ----------------
@@ -475,10 +620,31 @@ def run_simulator(is_guest: bool = False):
         icons=["house", "person", "receipt", "piggy-bank", "bar-chart-line", "star"], 
         default_index=pages.index(st.session_state.page),
         orientation="horizontal",
+        #styles={
+        #    "container": {"padding": "0!important", "margin-bottom": "1rem"},
+        #    "nav-link": {"font-size": "13px", "text-align": "center", "margin":"0px"},
+        #    "nav-link-selected": {"background-color": "#4285f4"}, # Google Blue
+        #}
         styles={
-            "container": {"padding": "0!important", "margin-bottom": "1rem"},
-            "nav-link": {"font-size": "13px", "text-align": "center", "margin":"0px"},
-            "nav-link-selected": {"background-color": "#4285f4"}, # Google Blue
+            # Force flex layout, prevent wrapping, and allow horizontal scrolling
+            "container": {
+                "padding": "0!important", 
+                "margin-bottom": "1rem", 
+                "display": "flex", 
+                "flex-wrap": "nowrap", 
+                "overflow-x": "auto"
+            },
+            # Shrink the icons slightly
+            "icon": {"font-size": "14px"},
+            # Shrink text, prevent text from wrapping, and tighten margins
+            "nav-link": {
+                "font-size": "11px", 
+                "text-align": "center", 
+                "margin": "0px", 
+                "white-space": "nowrap",
+                "padding": "5px"
+            },
+            "nav-link-selected": {"background-color": "#4285f4"},
         }
     )
 
@@ -554,96 +720,13 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     # 8. PAGE RENDERING (PURE UI)
     # ==========================================================
-    if page == "Welcome":
-        #st.header("About the App")
-        st.title("Plan Your Financial Future With Confidence")
-        st.subheader("A simple, powerful tool to understand your future income, expenses, and savings.")
-        
-        st.markdown("""
-        ## 👋 Welcome to Your Smart Financial Planner
-
-        Plan smarter. Invest better. Retire with confidence.
-
-        """)
-
-        st.markdown("### 🎯 What you can do here")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.markdown("""
-            ### 💰 Money & Expenses
-            - Track lifestyle costs  
-            - Plan major life goals  
-            - Estimate yearly spending  
-            """)
-
-        with col2:
-            st.markdown("""
-            ### 📈 Investments & Growth
-            - Choose investment mix  
-            - Compare strategies  
-            - See long-term projections  
-            """)
-
-        with col3:
-            st.markdown("""
-            ### 🏖 Finance Readiness
-            - Check income sustainability  
-            - Estimate corpus longevity  
-            - Visualize future wealth  
-            """)
-
-        st.markdown("---")
-
-
-        st.markdown("### 🔮 Explore Different Financial Futures")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.markdown("""
-            🟢 **Base Scenario**  
-            Balanced growth with realistic assumptions.
-            """)
-
-        with col2:
-            st.markdown("""
-            🟡 **Conservative Scenario**  
-            Stability first. Lower risk approach.
-            """)
-
-        with col3:
-            st.markdown("""
-            🔴 **Aggressive Scenario**  
-            Higher growth with higher risk.
-            """)
-
-        st.markdown("---")
-
-
-        st.markdown("""
-        ### 🚀 Why people love this simulator
-
-        ✔ Simple and intuitive  
-        ✔ Adapts to your life stage  
-        ✔ Visual projections — not guesswork  
-        ✔ Multi-scenario planning in seconds  
-
-        """)
-
-        st.success("💡 In just a few minutes, see if your future lifestyle is financially secure.")
-
-        
-        st.info(
-            "Designed for everyday individuals — no financial background required."
-        )
-        st.success(
-            "👉 Start by entering your details in 'Your Profile' to see your personalized retirement outlook."
-        )
-
+    
     #    st.markdown(config["about"])
-
+    if page == "Welcome":
+        if is_mobile:
+            render_welcome_page_mobile()
+        else:
+            render_welome_page()
     elif page == "Your Financial Profile":
         from ui.base_data import render_base_data
         render_base_data(config["base_data"], user_data, user)
