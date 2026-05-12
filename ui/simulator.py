@@ -728,8 +728,11 @@ def run_simulator(is_guest: bool = False):
         else:
             render_welome_page()
     elif page == "Your Financial Profile":
-        from ui.base_data import render_base_data
-        render_base_data(config["base_data"], user_data, user)
+        from ui.base_data import render_base_data, render_base_data_mobile
+        if is_mobile:
+            render_base_data_mobile(config["base_data"], user_data, user)
+        else:
+            render_base_data(config["base_data"], user_data, user)
 
     elif page == "Your Financial Commitments & Expenses":
         from ui.expenses import render_expenses

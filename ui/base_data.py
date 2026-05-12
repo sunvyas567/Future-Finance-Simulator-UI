@@ -423,3 +423,152 @@ def render_base_data(config, user_data: dict, user: dict):
     #    "Total Initial Corpus",
     #    f"{currency}{total:,.0f}"
     #)
+
+# =========================================================
+# UI
+# =========================================================
+def render_base_data_mobile(config, user_data: dict, user: dict):
+    is_guest = user is None
+    is_premium = user.get("is_premium", False) if user else False
+
+    COUNTRIES = {
+        "India": "IN",
+        "United States": "US",
+        "United Kingdom": "UK",
+    }
+
+    user_data.setdefault("country", "IN")
+
+    def Reset_Active_Scenario(): 
+        st.session_state["_active_scenario_loaded"] = None  
+
+    # 1. Country Selection (Standalone)
+    selected = st.selectbox(
+        "🌍 Country of Residence",
+        list(COUNTRIES.keys()),
+        index=list(COUNTRIES.values()).index(user_data["country"]),
+        on_change=Reset_Active_Scenario,
+        disabled=is_guest,
+    )
+    user_data["country"] = COUNTRIES[selected]
+    hydrate_initial_corpus_defaults(user_data, user_data["country"])
+    currency = get_currency(user_data)
+
+    st.header("👤 Your Profile")
+    st.caption("These details remain constant across all scenarios.")
+
+    # 2. Demographics (Stacked in a single mobile-friendly card)
+    with st.container(border=True):
+        user_data.setdefault("GLAge", {"input": 35})
+        user_data.setdefault("GLGender", {"input": "Male"})
+        user_data.setdefault("GLProjectionYears", {"input": 25})
+
+        age = st.number_input(
+            "Current Age",
+            min_value=18, max_value=100,
+            value=int(user_data["GLAge"]["input"]),
+            disabled=is_guest or not is_premium,
+        )
+        if not is_guest: user_data["GLAge"]["input"] = age
+
+        gender = st.selectbox(
+            "Gender", ["Male", "Female"],
+            index=0 if user_data["GLGender"]["input"] == "Male" else 1,
+            disabled=is_guest or not is_premium,
+        )
+        if not is_guest: user_data["GLGender"]["input"] = gender
+
+        max_years = 60 if is_premium else 2
+        safe_years = min(int(user_data["GLProjectionYears"]["input"]), max_years)
+        
+        years = st.number_input(
+            "Planning Duration (Years)",
+            min_value=1, max_value=max_years,
+            value=safe_years,
+            disabled=is_guest or not is_premium,
+        )
+        if not is_guest: user_data["GLProjectionYears"]["input"] = years
+        
+        if not is_guest and not is_premium:
+            st.caption("🔒 Free users are limited to 2 years. Upgrade to extend.")
+
+    # 3. Life Stage Context
+    age_val = user_data["GLAge"]["input"]
+    stage = get_life_stage(age_val)
+    
+    st.header("💰 Starting Savings")
+    render_stage_context(stage)
+
+    def render_corpus_cards(corpus_config: list):
+        user_data.setdefault("initial_corpus", {})
+        country = user_data.get("country", "IN")
+        user_data["initial_corpus"].setdefault(country, {})
+        country_corpus = user_data["initial_corpus"][country]
+
+        total = 0
+
+        # No more columns! Stacked cards with Conditional Inputs
+        for item in corpus_config:
+            key = item["key"]
+            with st.container(border=True):
+                # Put the label and checkbox on the same visual block
+                include_key = f"corpus_{country}_{key}_include"
+                value_key = f"corpus_{country}_{key}_value"
+
+                if include_key not in st.session_state:
+                    st.session_state[include_key] = country_corpus.get(key, 0) > 0
+
+                include = st.toggle(
+                    f"{item['icon']} **{item['label']}**", 
+                    key=include_key, 
+                    disabled=is_guest or not is_premium
+                )
+
+                # ONLY render the number input if the toggle is ON (Saves massive screen space)
+                current_value = float(country_corpus.get(key, 0))
+                if include:
+                    value = st.number_input(
+                        f"Amount ({currency})",
+                        min_value=0.0,
+                        value=current_value if current_value > 0 else 10000.0, # Suggest a starter value
+                        disabled=is_guest or not is_premium,
+                        key=value_key,
+                        label_visibility="collapsed" # Hide redundant label
+                    )
+                    if not is_guest:
+                        country_corpus[key] = value
+                    total += value
+                else:
+                    if not is_guest:
+                        country_corpus[key] = 0.0
+
+        return total
+
+    # Country-specific config remains the same
+    if user_data["country"] == "IN":
+        corpus_config = [
+            {"key": "PF", "label": "Provident Fund", "icon": "🏦"},
+            {"key": "PPF", "label": "Public Provident Fund", "icon": "📘"},
+            {"key": "NPS", "label": "National Pension Scheme", "icon": "📊"},
+            {"key": "SUPER", "label": "Superannuation", "icon": "🧾"},
+            {"key": "OTHER", "label": "Other Investments", "icon": "➕"},
+        ]
+    elif user_data["country"] == "US":
+        corpus_config = [
+            {"key": "401K", "label": "401(k)", "icon": "🏦"},
+            {"key": "IRA", "label": "IRA", "icon": "📘"},
+            {"key": "BROKERAGE", "label": "Brokerage", "icon": "📈"},
+            {"key": "OTHER", "label": "Other", "icon": "➕"},
+        ]
+    elif user_data["country"] == "UK":
+        corpus_config = [
+            {"key": "PENSION", "label": "Pension Fund", "icon": "🏦"},
+            {"key": "ISA", "label": "ISA", "icon": "📘"},
+            {"key": "OTHER", "label": "Other", "icon": "➕"},
+        ]
+
+    total = render_corpus_cards(corpus_config)
+
+    # Highlight the final metric
+    with st.container(border=True):
+        st.metric("Total Starting Corpus", f"{currency}{total:,.0f}")
