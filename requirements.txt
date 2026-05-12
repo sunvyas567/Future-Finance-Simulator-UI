@@ -1,6 +1,7 @@
 streamlit
 streamlit-authenticator
 streamlit-option-menu==0.3.13
+streamlit-javascript
 requests
 pandas
 plotly
