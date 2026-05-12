@@ -6,6 +6,61 @@ import streamlit as st
 
 import subprocess, os
 
+import streamlit as st
+import pandas as pd
+import subprocess, os
+
+# 1. THIS MUST BE THE VERY FIRST STREAMLIT COMMAND
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
+# 2. INJECT GLOBAL CSS (This nukes the header across all pages)
+st.markdown("""
+    <style>
+        /* Hide the entire Streamlit top header */
+        header {visibility: hidden;}
+        
+        /* Specifically target the container to free up screen space */
+        [data-testid="stHeader"] {
+            display: none !important;
+        }
+        
+        /* Hide the Deploy button */
+        .stDeployButton {
+            display: none !important;
+        }
+        
+        /* Hide the Main Menu hamburger */
+        #MainMenu {
+            visibility: hidden;
+        }
+        
+        /* Hide the 'Made with Streamlit' footer */
+        footer {
+            visibility: hidden;
+        }
+
+        /* Compress the main container padding for mobile */
+        .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* Hide the sidebar completely on mobile screens */
+        @media (max-width: 768px) {
+            [data-testid="collapsedControl"] {
+                display: none !important;
+            }
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# ... Rest of your GLOBAL session initialization starts here ...
+
 #import streamlit as st
 
 # Simple mobile detection using query params fallback
@@ -131,36 +186,36 @@ def render_landing():
 
     #import streamlit as st
 
-    st.set_page_config(layout="wide")
+    #st.set_page_config(layout="wide")
 
-    st.markdown("""
-    <style>
-    .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    /* NEW: Hide the default Streamlit top bar and menu */
-    [data-testid="stHeader"] {
-        display: none !important;
-    }
+    #st.markdown("""
+    #<style>
+    #.block-container {
+    #    padding-top: 1rem;
+    #    padding-bottom: 1rem;
+    #    padding-left: 1rem;
+    #    padding-right: 1rem;
+    #}
+    #/* NEW: Hide the default Streamlit top bar and menu */
+    #[data-testid="stHeader"] {
+    #    display: none !important;
+    #}
     
-    /* NEW: Hide the "Deploy" button (just in case Streamlit forces it) */
-    .stDeployButton {
-        display: none !important;
-    }
-    /* NEW: Hide the sidebar completely on mobile screens */
-    @media (max-width: 768px) {
-        [data-testid="collapsedControl"] {
-            display: none !important;
-        }
-        section[data-testid="stSidebar"] {
-            display: none !important;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    #/* NEW: Hide the "Deploy" button (just in case Streamlit forces it) */
+    #.stDeployButton {
+    #    display: none !important;
+    #}
+    #/* NEW: Hide the sidebar completely on mobile screens */
+    #@media (max-width: 768px) {
+    #    [data-testid="collapsedControl"] {
+    #        display: none !important;
+    #    }
+    #    section[data-testid="stSidebar"] {
+    #        display: none !important;
+    #    }
+    #}
+    #</style>
+    #""", unsafe_allow_html=True)
 
     is_mobile = st.session_state.get("is_mobile", False)
 
