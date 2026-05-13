@@ -657,7 +657,8 @@ def run_simulator(is_guest: bool = False):
                 "margin": "0px", 
                 "white-space": "nowrap",
                 "padding": "8px 12px",
-                "border-radius": "15px"
+                "border-radius": "15px",
+                "color": "#4b5563"  # <--- NEW: Forces unselected text to be dark gray
             },
             "nav-link-selected": {
                 "background-color": "#4f46e5", # Modern Indigo color
