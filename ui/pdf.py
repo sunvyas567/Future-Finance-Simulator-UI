@@ -278,14 +278,62 @@ def build_financial_html(
     # -----------------------------------------------------
     # Advisor section
     # -----------------------------------------------------
+    # -----------------------------------------------------
+    # Advisor section (Converted from JSON to HTML Table)
+    # -----------------------------------------------------
     advisor_html = ""
-    if advisor_advice:
+    if advisor_advice and isinstance(advisor_advice, dict):
+        rows = ""
+        for key, value in advisor_advice.items():
+            # 1. Clean up the key names (e.g., "tax_strategy" becomes "Tax Strategy")
+            formatted_key = str(key).replace("_", " ").title()
+            
+            # 2. Check if the value is a list (like a list of bullet points)
+            if isinstance(value, list):
+                # Convert list items into HTML bullet points
+                list_items = "".join([f"<li style='margin-bottom: 4px;'>{item}</li>" for item in value])
+                formatted_value = f"<ul style='margin: 0; padding-left: 20px;'>{list_items}</ul>"
+            else:
+                # If it's just a normal string or number, print it safely
+                formatted_value = str(value)
+                
+            # 3. Build the table row
+            rows += f"""
+            <tr>
+                <td style="width: 25%; font-weight: bold; vertical-align: top; background-color: #f8f9fa;">{formatted_key}</td>
+                <td style="vertical-align: top;">{formatted_value}</td>
+            </tr>
+            """
+
         advisor_html = f"""
-        <h2>Advisor Insights & Recommendations</h2>
-        <div class="advisor-box">
-        {advisor_advice}
+        <div class="section page-break">
+            <h2>Advisor Insights & Recommendations</h2>
+            <p class="section-desc">Personalized strategies based on your projected financial trajectory.</p>
+            <table class="table" style="border: 1px solid #e5e7eb;">
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
         </div>
         """
+    elif advisor_advice:
+        # Fallback just in case the API returns a flat string instead of a dictionary
+        advisor_html = f"""
+        <div class="section page-break">
+            <h2>Advisor Insights & Recommendations</h2>
+            <div class="advisor-box">
+                {advisor_advice}
+            </div>
+        </div>
+        """
+    #advisor_html = ""
+    #if advisor_advice:
+    #    advisor_html = f"""
+    #    <h2>Advisor Insights & Recommendations</h2>
+    #    <div class="advisor-box">
+    #    {advisor_advice}
+    #    </div>
+    #    """
 
     # =====================================================
     # HTML DOCUMENT
