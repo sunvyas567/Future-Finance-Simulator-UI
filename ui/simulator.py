@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from streamlit_option_menu import option_menu
-
+from ui.base_data import hydrate_initial_corpus_defaults
 from services.api_client import (
     get_config,
     get_user_data,
@@ -9,8 +9,12 @@ from services.api_client import (
     get_entitlement,
     calculate_projections
 )
-
+from ui.base_data import render_base_data, render_base_data_mobile
 from ui.payments import render_payments
+from ui.investment_plan import ensure_scenarios
+from ui.expenses import render_expenses
+from ui.investment_plan import render_investment_plan,render_investment_plan_mobile
+from ui.summary import render_summary,render_summary_mobile
 
 # -------------------------------------------------------------------
 # User Context Resolver (SAFE)
@@ -611,7 +615,7 @@ def run_simulator(is_guest: bool = False):
     # --------------------------------------------------
     # GLOBAL initial corpus hydration (CRITICAL)
     # --------------------------------------------------
-    from ui.base_data import hydrate_initial_corpus_defaults
+    
 
     hydrate_initial_corpus_defaults(
         user_data,
@@ -747,7 +751,7 @@ def run_simulator(is_guest: bool = False):
 
     if page == "Report":
         try:
-            from ui.investment_plan import ensure_scenarios
+            
             # -------------------------------------------------
             # ENSURE SCENARIOS EXIST (CRITICAL – SINGLE PLACE)
             # -------------------------------------------------
@@ -802,25 +806,25 @@ def run_simulator(is_guest: bool = False):
         else:
             render_welome_page()
     elif page == "Profile":
-        from ui.base_data import render_base_data, render_base_data_mobile
+        
         if is_mobile:
             render_base_data_mobile(config["base_data"], user_data, user)
         else:
             render_base_data(config["base_data"], user_data, user)
 
     elif page == "Expenses":
-        from ui.expenses import render_expenses
+        
         render_expenses(config=config, user_data=user_data, user=user)
 
     elif page == "Strategy":
-        from ui.investment_plan import render_investment_plan,render_investment_plan_mobile
+        
         if is_mobile:
             render_investment_plan_mobile(user_data=user_data, user=user)
         else:
             render_investment_plan(user_data=user_data, user=user)
 
     elif page == "Report":
-        from ui.summary import render_summary,render_summary_mobile
+        
         if not projections or not base_context:
             st.warning("Please complete inputs to view summary.")
             return

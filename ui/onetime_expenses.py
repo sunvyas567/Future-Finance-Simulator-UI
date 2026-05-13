@@ -412,6 +412,7 @@ def render_onetime_expenses_mobile(config, user_data, user):
     </div>
     """, unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
+    
 def render_onetime_expenses_mobile_old(config, user_data, user):
     is_guest = user.get("is_guest", False)
     is_premium = user.get("is_premium", False) if user else False

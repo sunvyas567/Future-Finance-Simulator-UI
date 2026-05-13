@@ -1,14 +1,10 @@
 import streamlit as st
 from ui.simulator import run_simulator
 from ui.auth import get_authenticator
-
-import streamlit as st
-
-import subprocess, os
-
-import streamlit as st
 import pandas as pd
 import subprocess, os
+from streamlit_javascript import st_javascript
+from ui.auth_pages import render_login, render_register
 
 # 1. THIS MUST BE THE VERY FIRST STREAMLIT COMMAND
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
@@ -71,7 +67,7 @@ st.markdown("""
 
 # ... Rest of your GLOBAL session initialization starts here ...
 
-from streamlit_javascript import st_javascript
+
 
 # 1. Fetch the window width from the browser synchronously
 window_width = st_javascript("window.innerWidth")
@@ -462,7 +458,7 @@ def save_user_to_firebase(
 
     return {"status": "created"}
 
-from ui.auth_pages import render_login, render_register
+
 
 def render_auth():
     if st.session_state.view == "login":
