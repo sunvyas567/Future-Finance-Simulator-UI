@@ -313,7 +313,106 @@ def render_onetime_expenses(config, user_data, user):
 # -------------------------------------------------
 # MAIN UI
 # -------------------------------------------------
+# =========================================================
+# MAIN UI (Monarch-Style Mobile)
+# =========================================================
 def render_onetime_expenses_mobile(config, user_data, user):
+    is_guest = user.get("is_guest", False)
+    is_premium = user.get("is_premium", False) if user else False
+    currency = get_currency(user_data)
+    country = user_data.get("country", "IN")
+
+    st.markdown("### 🎯 Big Life Milestones")
+    st.caption("Tap the goals you are planning for in the future.")
+
+    stage = _get_life_stage(user_data)
+    user_data.setdefault("onetime_expenses", {})
+    user_data["onetime_expenses"].setdefault(country, {})
+    expenses = user_data["onetime_expenses"][country]
+
+    input_fields = [f for f in config if "Field Default Value" in f and "Field Description" in f]
+    visible_fields = []
+
+    for field in input_fields:
+        key = field["Field Name"]
+        label = field["Field Description"]
+        stage_label = _apply_stage_rules(stage, key, label)
+        if stage_label is None:
+            expenses[key] = {"input": 0.0}
+            continue
+        field["__stage_label"] = stage_label
+        visible_fields.append(field)
+
+    # Conversational prompts to make inputs feel human
+    FRIENDLY_PROMPTS = {
+        "Education": "Planning for higher education?",
+        "Vehicle": "Buying or upgrading a car?",
+        "House": "Renovating or buying a home?",
+        "Marriage": "Funding a wedding?",
+        "Travel": "Taking a dream vacation?",
+        "Medical": "Setting aside a medical reserve?",
+        "Property": "Investing in real estate?"
+    }
+
+    # -------------------------------------------------
+    # Input fields (Conversational Cards)
+    # -------------------------------------------------
+    for field in visible_fields:
+        key = field["Field Name"]
+        label = field.get("__stage_label", field["Field Description"])
+        default = float(field.get("Field Default Value", 0))
+        icon = FIELD_ICONS.get(key, "💸")
+        stored_value = float(expenses.get(key, {}).get("input", default))
+
+        include_key = f"onetime_{country}_{key}_include"
+        value_key = f"onetime_{country}_{key}_value"
+
+        if include_key not in st.session_state:
+            st.session_state[include_key] = stored_value > 0
+
+        # Try to find a friendly prompt, fallback to standard label
+        prompt_text = label
+        for keyword, friendly in FRIENDLY_PROMPTS.items():
+            if keyword.lower() in label.lower():
+                prompt_text = friendly
+                break
+
+        with st.container(border=True):
+            include = st.toggle(
+                f"{icon} **{prompt_text}**",
+                key=include_key,
+                disabled=is_guest or not is_premium
+            )
+
+            if include:
+                value = st.number_input(
+                    f"Estimated Cost ({currency})",
+                    min_value=0.0,
+                    value=stored_value if stored_value > 0 else 50000.0,
+                    step=10000.0,
+                    disabled=is_guest or not is_premium,
+                    key=value_key,
+                    label_visibility="collapsed"
+                )
+                if not is_guest:
+                    expenses[key] = {"input": value}
+            else:
+                if not is_guest:
+                    expenses[key] = {"input": 0.0}
+
+    # -------------------------------------------------
+    # Summary & Total (App Style)
+    # -------------------------------------------------
+    total = sum(v.get("input", 0) for v in expenses.values())
+
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 15px; border-left: 5px solid #ec4899; margin-top: 20px;">
+        <p style="margin:0; font-size: 14px; color: #6c757d;">Total Planned Milestones</p>
+        <h2 style="margin:0; color: #111827;">{currency}{total:,.0f}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+def render_onetime_expenses_mobile_old(config, user_data, user):
     is_guest = user.get("is_guest", False)
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)

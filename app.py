@@ -302,20 +302,32 @@ def render_landing_old():
 def render_landing():
     # 1. Edge-to-Edge Mobile Hero Banner
     # The negative margins pull the banner flush to the edges of the phone screen
+    #st.markdown("""
+    #<div style="background: linear-gradient(135deg, #1e3a8a 0%, #4f46e5 100%); 
+    #            padding: 50px 20px 40px 20px; 
+    ##            margin: -1rem -1rem 20px -1rem; 
+    #            border-radius: 0 0 30px 30px; 
+    #            text-align: center; 
+    #            color: white; 
+    #            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+    #    <div style="font-size: 50px; margin-bottom: 10px;">📊</div>
+    #    <h1 style="color: white; font-size: 32px; font-weight: 800; margin-bottom: 5px; padding-top: 0;">FinPlan</h1>
+    #    <p style="font-size: 16px; opacity: 0.9; margin: 0;">Your Financial Future, Visualized.</p>
+    #</div>
+    #""", unsafe_allow_html=True)
+    # 1. Edge-to-Edge Mobile Hero Banner (Slimmer Version)
     st.markdown("""
     <div style="background: linear-gradient(135deg, #1e3a8a 0%, #4f46e5 100%); 
-                padding: 50px 20px 40px 20px; 
+                padding: 25px 20px 20px 20px; /* Cut padding in half */
                 margin: -1rem -1rem 20px -1rem; 
-                border-radius: 0 0 30px 30px; 
+                border-radius: 0 0 20px 20px; /* Slightly softer curve */
                 text-align: center; 
                 color: white; 
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-        <div style="font-size: 50px; margin-bottom: 10px;">📊</div>
-        <h1 style="color: white; font-size: 32px; font-weight: 800; margin-bottom: 5px; padding-top: 0;">FinPlan</h1>
-        <p style="font-size: 16px; opacity: 0.9; margin: 0;">Your Financial Future, Visualized.</p>
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 30px; margin-bottom: 5px;">📊</div> <h1 style="color: white; font-size: 24px; font-weight: 800; margin-bottom: 2px; padding-top: 0;">FinPlan</h1>
+        <p style="font-size: 14px; opacity: 0.9; margin: 0;">Your Financial Future, Visualized.</p>
     </div>
     """, unsafe_allow_html=True)
-
     # 2. Primary Call to Actions (Thumb-friendly stack)
     # We use empty columns to center the text slightly or just rely on native center alignment
     st.markdown("<br>", unsafe_allow_html=True)
@@ -352,7 +364,7 @@ def render_landing():
         st.caption("Built-in logic for country-specific accounts like SCSS, POMIS, 401(k), and ISAs.")
         
     st.markdown("<br><br>", unsafe_allow_html=True) # Bottom padding for easy scrolling
-    
+
 def render_landing_old1():
     st.title("Financial Life Planner")
     st.subheader("Visualize Your Financial Future in Minutes")
