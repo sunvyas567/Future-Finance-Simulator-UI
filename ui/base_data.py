@@ -427,7 +427,121 @@ def render_base_data(config, user_data: dict, user: dict):
 # =========================================================
 # UI
 # =========================================================
+# UI (Wealthfront/Mobile Style)
+# =========================================================
 def render_base_data_mobile(config, user_data: dict, user: dict):
+    is_guest = user is None
+    is_premium = user.get("is_premium", False) if user else False
+    COUNTRIES = {"India": "IN", "United States": "US", "United Kingdom": "UK"}
+    user_data.setdefault("country", "IN")
+
+    def Reset_Active_Scenario(): 
+        st.session_state["_active_scenario_loaded"] = None  
+
+    # 1. Subtle Country Selector
+    selected = st.selectbox(
+        "🌍 Where do you live?",
+        list(COUNTRIES.keys()),
+        index=list(COUNTRIES.values()).index(user_data["country"]),
+        on_change=Reset_Active_Scenario,
+        disabled=is_guest,
+    )
+    user_data["country"] = COUNTRIES[selected]
+    hydrate_initial_corpus_defaults(user_data, user_data["country"])
+    currency = get_currency(user_data)
+
+    st.markdown("---")
+    st.markdown("### 👤 Let's get to know you")
+
+    # 2. Conversational Sliders (Tactile Mobile Input)
+    with st.container(border=True):
+        user_data.setdefault("GLAge", {"input": 35})
+        user_data.setdefault("GLProjectionYears", {"input": 25})
+
+        age = st.slider(
+            "How old are you today?",
+            min_value=18, max_value=80,
+            value=int(user_data["GLAge"]["input"]),
+            disabled=is_guest or not is_premium,
+        )
+        if not is_guest: user_data["GLAge"]["input"] = age
+
+        max_years = 60 if is_premium else 2
+        safe_years = min(int(user_data["GLProjectionYears"]["input"]), max_years)
+        
+        years = st.slider(
+            "How many years into the future should we look?",
+            min_value=1, max_value=max_years,
+            value=safe_years,
+            disabled=is_guest or not is_premium,
+            help="Free users are limited to 2 years."
+        )
+        if not is_guest: user_data["GLProjectionYears"]["input"] = years
+
+    # 3. Starting Corpus (Clean Toggle Cards)
+    st.markdown("### 💰 Your Starting Line")
+    st.caption("Tap to include savings you already have.")
+
+    def render_corpus_cards(corpus_config: list):
+        user_data.setdefault("initial_corpus", {})
+        country = user_data.get("country", "IN")
+        user_data["initial_corpus"].setdefault(country, {})
+        country_corpus = user_data["initial_corpus"][country]
+        total = 0
+
+        for item in corpus_config:
+            key = item["key"]
+            with st.container(border=True):
+                include_key = f"corpus_{country}_{key}_include"
+                value_key = f"corpus_{country}_{key}_value"
+
+                if include_key not in st.session_state:
+                    st.session_state[include_key] = country_corpus.get(key, 0) > 0
+
+                # Sleek Toggle
+                include = st.toggle(f"{item['icon']} **{item['label']}**", key=include_key, disabled=is_guest or not is_premium)
+
+                if include:
+                    current_value = float(country_corpus.get(key, 0))
+                    value = st.number_input(
+                        f"Current Balance ({currency})",
+                        min_value=0.0,
+                        value=current_value if current_value > 0 else 50000.0,
+                        step=10000.0,
+                        disabled=is_guest or not is_premium,
+                        key=value_key,
+                        label_visibility="collapsed"
+                    )
+                    if not is_guest: country_corpus[key] = value
+                    total += value
+                else:
+                    if not is_guest: country_corpus[key] = 0.0
+        return total
+
+    if user_data["country"] == "IN":
+        corpus_config = [
+            {"key": "PF", "label": "Provident Fund", "icon": "🏦"},
+            {"key": "PPF", "label": "Public Provident Fund", "icon": "📘"},
+            {"key": "NPS", "label": "NPS Balance", "icon": "📊"},
+            {"key": "OTHER", "label": "Other Savings", "icon": "➕"},
+        ]
+    # (Keep your existing US/UK config lists here)
+    elif user_data["country"] == "US":
+        corpus_config = [{"key": "401K", "label": "401(k)", "icon": "🏦"}, {"key": "IRA", "label": "IRA", "icon": "📘"}, {"key": "BROKERAGE", "label": "Brokerage", "icon": "📈"}, {"key": "OTHER", "label": "Other", "icon": "➕"}]
+    elif user_data["country"] == "UK":
+        corpus_config = [{"key": "PENSION", "label": "Pension Fund", "icon": "🏦"}, {"key": "ISA", "label": "ISA", "icon": "📘"}, {"key": "OTHER", "label": "Other", "icon": "➕"}]
+
+    total = render_corpus_cards(corpus_config)
+
+    # Big, bold summary at the bottom
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 15px; border-left: 5px solid #4f46e5; margin-top: 20px;">
+        <p style="margin:0; font-size: 14px; color: #6c757d;">Total Starting Wealth</p>
+        <h2 style="margin:0; color: #111827;">{currency}{total:,.0f}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+def render_base_data_mobile_old(config, user_data: dict, user: dict):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
 

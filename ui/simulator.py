@@ -371,8 +371,30 @@ def render_welome_page():
         st.success(
             "👉 Start by entering your details in 'Your Profile' to see your personalized retirement outlook."
         )
-
 def render_welcome_page_mobile():
+        # Colorful 'Hero' Card
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%); padding: 30px; border-radius: 20px; color: white; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+            <h1 style="color: white; margin-bottom: 10px; font-size: 28px;">Your Financial Future,<br>Visualized.</h1>
+            <p style="font-size: 16px; opacity: 0.9;">Plan smarter. Invest better. Retire with confidence.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Sleek, clickable action cards
+        st.markdown("### 🎯 What you can do here")
+
+        with st.container(border=True):
+            st.markdown("#### 💳 **Control Spending**\nTrack lifestyle costs and plan major life goals without spreadsheets.")
+
+        with st.container(border=True):
+            st.markdown("#### 📈 **Grow Wealth**\nChoose your investment mix and see how compound interest works for you.")
+
+        with st.container(border=True):
+            st.markdown("#### 🏖️ **Plan Retirement**\nCheck if your income is sustainable and visualize your future net worth.")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.success("👉 **Ready?** Tap 'Profile' in the menu above to start.")
+def render_welcome_page_mobile_old():
         st.title("Plan Your Financial Future With Confidence")
         st.caption("A simple, powerful tool to understand your future income, expenses, and savings.")
         
@@ -598,53 +620,49 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     # 5. NAVIGATION
     # ==========================================================
-    pages = [
-        "Welcome",
-        "Your Financial Profile",
-        "Your Financial Commitments & Expenses",
-        "Your Income Sources & Investment Strategy",
-        "Your Financial Outlook Report",
-    ]
-
+    # ==========================================================
+    # 5. NAVIGATION (Sleek Mobile App Bar)
+    # ==========================================================
+    # Use very short, punchy names for the mobile tab bar
+    pages = ["Home", "Profile", "Expenses", "Strategy", "Report"]
+    
     if not user["is_guest"] and not user["is_premium"]:
         pages.append("Upgrade")
 
     if "page" not in st.session_state or st.session_state.page not in pages:
-        st.session_state.page = pages[0]
+        # Map old session state names to new ones if necessary, or default to Home
+        st.session_state.page = "Home"
 
-    # Create the horizontal menu directly in the main body (No Sidebar)
     selected = option_menu(
         menu_title=None, 
         options=pages,
-        # Adding Bootstrap icons makes the tabs look like a real mobile app
-        icons=["house", "person", "receipt", "piggy-bank", "bar-chart-line", "star"], 
+        icons=["house-fill", "person-badge-fill", "credit-card-fill", "pie-chart-fill", "bar-chart-fill", "star-fill"], 
         default_index=pages.index(st.session_state.page),
         orientation="horizontal",
-        #styles={
-        #    "container": {"padding": "0!important", "margin-bottom": "1rem"},
-        #    "nav-link": {"font-size": "13px", "text-align": "center", "margin":"0px"},
-        #    "nav-link-selected": {"background-color": "#4285f4"}, # Google Blue
-        #}
         styles={
-            # Force flex layout, prevent wrapping, and allow horizontal scrolling
             "container": {
-                "padding": "0!important", 
+                "padding": "5px!important", 
                 "margin-bottom": "1rem", 
                 "display": "flex", 
                 "flex-wrap": "nowrap", 
-                "overflow-x": "auto"
+                "overflow-x": "auto",
+                "background-color": "#f8f9fa", # Light app-bar background
+                "border-radius": "20px" # Pill shape
             },
-            # Shrink the icons slightly
-            "icon": {"font-size": "14px"},
-            # Shrink text, prevent text from wrapping, and tighten margins
+            "icon": {"font-size": "16px", "color": "#6c757d"},
             "nav-link": {
-                "font-size": "11px", 
+                "font-size": "12px", 
+                "font-weight": "bold",
                 "text-align": "center", 
                 "margin": "0px", 
                 "white-space": "nowrap",
-                "padding": "5px"
+                "padding": "8px 12px",
+                "border-radius": "15px"
             },
-            "nav-link-selected": {"background-color": "#4285f4"},
+            "nav-link-selected": {
+                "background-color": "#4f46e5", # Modern Indigo color
+                "color": "white"
+            },
         }
     )
 
@@ -653,6 +671,61 @@ def run_simulator(is_guest: bool = False):
         st.rerun()
 
     page = st.session_state.page
+    #pages = [
+    #    "Welcome",
+    #    "Your Financial Profile",
+    #    "Your Financial Commitments & Expenses",
+    #    "Your Income Sources & Investment Strategy",
+    #    "Your Financial Outlook Report",
+    #]
+
+    #if not user["is_guest"] and not user["is_premium"]:
+    #    pages.append("Upgrade")
+
+    #if "page" not in st.session_state or st.session_state.page not in pages:
+    #    st.session_state.page = pages[0]
+
+    # Create the horizontal menu directly in the main body (No Sidebar)
+    #selected = option_menu(
+    #    menu_title=None, 
+    ##    options=pages,
+        # Adding Bootstrap icons makes the tabs look like a real mobile app
+    #    icons=["house", "person", "receipt", "piggy-bank", "bar-chart-line", "star"], 
+    #    default_index=pages.index(st.session_state.page),
+    #    orientation="horizontal",
+        #styles={
+        #    "container": {"padding": "0!important", "margin-bottom": "1rem"},
+        #    "nav-link": {"font-size": "13px", "text-align": "center", "margin":"0px"},
+        #    "nav-link-selected": {"background-color": "#4285f4"}, # Google Blue
+        #}
+    #    styles={
+            # Force flex layout, prevent wrapping, and allow horizontal scrolling
+    #        "container": {
+    #            "padding": "0!important", 
+    #            "margin-bottom": "1rem", 
+    #            "display": "flex", 
+    #           "flex-wrap": "nowrap", 
+    #            "overflow-x": "auto"
+    #        },
+            # Shrink the icons slightly
+     #       "icon": {"font-size": "14px"},
+            # Shrink text, prevent text from wrapping, and tighten margins
+     #       "nav-link": {
+     #           "font-size": "11px", 
+     #           "text-align": "center", 
+     #           "margin": "0px", 
+     #           "white-space": "nowrap",
+     #           "padding": "5px"
+     #       },
+     #       "nav-link-selected": {"background-color": "#4285f4"},
+     #   }
+    #)
+
+    #if selected != st.session_state.page:
+    #    st.session_state.page = selected
+    #    st.rerun()
+
+    #page = st.session_state.page
     #with st.sidebar:
     #    selected = st.radio(
     #        "Navigate",
@@ -671,7 +744,7 @@ def run_simulator(is_guest: bool = False):
     projections = None
     base_context = None
 
-    if page == "Your Financial Outlook Report":
+    if page == "Report":
         try:
             from ui.investment_plan import ensure_scenarios
             # -------------------------------------------------
@@ -722,30 +795,30 @@ def run_simulator(is_guest: bool = False):
     # ==========================================================
     
     #    st.markdown(config["about"])
-    if page == "Welcome":
+    if page == "Home":
         if is_mobile:
             render_welcome_page_mobile()
         else:
             render_welome_page()
-    elif page == "Your Financial Profile":
+    elif page == "Profile":
         from ui.base_data import render_base_data, render_base_data_mobile
         if is_mobile:
             render_base_data_mobile(config["base_data"], user_data, user)
         else:
             render_base_data(config["base_data"], user_data, user)
 
-    elif page == "Your Financial Commitments & Expenses":
+    elif page == "Expenses":
         from ui.expenses import render_expenses
         render_expenses(config=config, user_data=user_data, user=user)
 
-    elif page == "Your Income Sources & Investment Strategy":
+    elif page == "Strategy":
         from ui.investment_plan import render_investment_plan,render_investment_plan_mobile
         if is_mobile:
             render_investment_plan_mobile(user_data=user_data, user=user)
         else:
             render_investment_plan(user_data=user_data, user=user)
 
-    elif page == "Your Financial Outlook Report":
+    elif page == "Report":
         from ui.summary import render_summary,render_summary_mobile
         if not projections or not base_context:
             st.warning("Please complete inputs to view summary.")

@@ -300,6 +300,60 @@ def render_landing_old():
     st.markdown("---")
 
 def render_landing():
+    # 1. Edge-to-Edge Mobile Hero Banner
+    # The negative margins pull the banner flush to the edges of the phone screen
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #1e3a8a 0%, #4f46e5 100%); 
+                padding: 50px 20px 40px 20px; 
+                margin: -1rem -1rem 20px -1rem; 
+                border-radius: 0 0 30px 30px; 
+                text-align: center; 
+                color: white; 
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 50px; margin-bottom: 10px;">📊</div>
+        <h1 style="color: white; font-size: 32px; font-weight: 800; margin-bottom: 5px; padding-top: 0;">FinPlan</h1>
+        <p style="font-size: 16px; opacity: 0.9; margin: 0;">Your Financial Future, Visualized.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. Primary Call to Actions (Thumb-friendly stack)
+    # We use empty columns to center the text slightly or just rely on native center alignment
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if st.button("🚀 Try the Demo (No Sign-up)", use_container_width=True, type="primary"):
+        st.session_state.view = "demo"
+        st.rerun()
+
+    if st.button("✨ Create Free Account", use_container_width=True):
+        st.session_state.view = "register"
+        st.rerun()
+
+    # Subtle login prompt below the main actions
+    st.markdown("<p style='text-align: center; font-size: 14px; color: #6b7280; margin-top: 15px; margin-bottom: 5px;'>Already have an account?</p>", unsafe_allow_html=True)
+    if st.button("Log In", use_container_width=True):
+        st.session_state.view = "login"
+        st.rerun()
+
+    st.divider()
+
+    # 3. Mobile-Friendly Feature Highlights (Stacked Cards)
+    st.markdown("### 💡 Why use this planner?")
+    
+    with st.container(border=True):
+        st.markdown("#### 🔄 Stage-Intelligent")
+        st.caption("Adapts automatically whether you are building wealth in your 30s or planning withdrawals in your 60s.")
+
+    with st.container(border=True):
+        st.markdown("#### 📈 Multi-Scenario")
+        st.caption("Compare Base, Conservative, and Aggressive market scenarios with a single tap.")
+
+    with st.container(border=True):
+        st.markdown("#### 🛡️ Tax & Rule Aware")
+        st.caption("Built-in logic for country-specific accounts like SCSS, POMIS, 401(k), and ISAs.")
+        
+    st.markdown("<br><br>", unsafe_allow_html=True) # Bottom padding for easy scrolling
+    
+def render_landing_old1():
     st.title("Financial Life Planner")
     st.subheader("Visualize Your Financial Future in Minutes")
     
