@@ -378,7 +378,7 @@ def render_welome_page():
 def render_welcome_page_mobile():
         # Colorful 'Hero' Card
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%); padding: 30px; border-radius: 20px; color: white; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%); padding: 15px; border-radius: 20px; color: white; text-align: center; margin-bottom: 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
             <h1 style="color: white; margin-bottom: 10px; font-size: 28px;">Your Financial Future,<br>Visualized.</h1>
             <p style="font-size: 16px; opacity: 0.9;">Plan smarter. Invest better. Retire with confidence.</p>
         </div>
