@@ -444,18 +444,25 @@ def render_base_data_mobile(config, user_data: dict, user: dict):
         st.session_state["_active_scenario_loaded"] = None  
 
     # 1. 🚨 THE BULLETPROOF iOS CSS HACK
+    # 1. 🚨 THE ULTIMATE iOS COLUMN OVERRIDE
     st.markdown("""
     <style>
-        @media screen and (max-width: 850px) {
+        /* Catch all mobile devices including Pro Max iPhones in landscape */
+        @media screen and (max-width: 1000px) {
+            /* Force the parent container to remain a flex row */
             div[data-testid="stHorizontalBlock"] {
+                display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: wrap !important;
                 justify-content: space-between !important;
             }
+            /* Bruteforce EVERY width property so Streamlit cannot collapse it */
             div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
                 width: 48% !important;
-                flex: 0 0 48% !important;
                 min-width: 48% !important;
+                max-width: 48% !important;
+                flex: 0 0 48% !important;
+                display: block !important;
                 margin-bottom: 10px !important;
             }
         }
@@ -464,11 +471,13 @@ def render_base_data_mobile(config, user_data: dict, user: dict):
             margin-bottom: 0px !important;
         }
         
+        /* Ultra-tight padding */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             padding: 10px 8px !important; 
         }
     </style>
     """, unsafe_allow_html=True)
+    
 
     # 1. Subtle Country Selector
     selected = st.selectbox(
@@ -560,7 +569,7 @@ def render_base_data_mobile(config, user_data: dict, user: dict):
                     <div style='margin-bottom: 8px;'>
                         <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
                             <span style='font-size: 20px;'>{item['icon']}</span>
-                            <span style='font-weight: 700; font-size: 14px; color: #111827;'>{item['label']}</span>
+                            <span style='font-weight: 700; font-size: 14px; color: #ffffff;'>{item['label']}</span>
                         </div>
                         <div style='font-size: 11px; color: #6b7280; line-height: 1.2;'>{item.get('desc', 'Current balance')}</div>
                     </div>
@@ -593,7 +602,7 @@ def render_base_data_mobile(config, user_data: dict, user: dict):
         <h2 style="margin:0; color: #111827;">{currency}{total:,.0f}</h2>
     </div>
     """, unsafe_allow_html=True)
-    
+
 def render_base_data_mobile_old2(config, user_data: dict, user: dict):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
