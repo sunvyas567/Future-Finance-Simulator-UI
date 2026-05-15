@@ -341,7 +341,7 @@ def render_onetime_expenses_mobile(config, user_data, user):
     #            flex-direction: row !important;
     ##            flex-wrap: wrap !important;
     #            justify-content: space-between !important;
-            }
+    #        }
     #        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
     #            width: 48% !important;
     #            flex: 0 0 48% !important;
