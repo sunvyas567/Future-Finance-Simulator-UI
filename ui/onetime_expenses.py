@@ -333,33 +333,33 @@ def render_onetime_expenses_mobile(config, user_data, user):
     country = user_data.get("country", "IN")
 
     # 1. 🚨 THE BULLETPROOF iOS CSS HACK
-    st.markdown("""
-    <style>
-        /* Force row layout for iOS Safari */
-        @media screen and (max-width: 850px) {
-            div[data-testid="stHorizontalBlock"] {
-                flex-direction: row !important;
-                flex-wrap: wrap !important;
-                justify-content: space-between !important;
+    #st.markdown("""
+    #<style>
+    #    /* Force row layout for iOS Safari */
+    #    @media screen and (max-width: 850px) {
+    #        div[data-testid="stHorizontalBlock"] {
+    #            flex-direction: row !important;
+    ##            flex-wrap: wrap !important;
+    #            justify-content: space-between !important;
             }
-            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-                width: 48% !important;
-                flex: 0 0 48% !important;
-                min-width: 48% !important;
-                margin-bottom: 10px !important;
-            }
-        }
+    #        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    #            width: 48% !important;
+    #            flex: 0 0 48% !important;
+    #            min-width: 48% !important;
+    #            margin-bottom: 10px !important;
+    #        }
+    #    }
         
-        .stNumberInput {
-            margin-bottom: 0px !important;
-        }
+    #    .stNumberInput {
+    #        margin-bottom: 0px !important;
+    #    }
         
-        /* Ultra-tight padding */
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            padding: 10px 8px !important; 
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    #    /* Ultra-tight padding */
+    #    div[data-testid="stVerticalBlockBorderWrapper"] {
+    #        padding: 10px 8px !important; 
+    #    }
+    #</style>
+    #""", unsafe_allow_html=True)
 
     st.markdown("### 🎯 Big Life Milestones")
     st.caption("Enter amounts for your future goals. Leave at 0 if not applicable.")
@@ -420,7 +420,7 @@ def render_onetime_expenses_mobile(config, user_data, user):
                 <div style='margin-bottom: 8px;'>
                     <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
                         <span style='font-size: 20px;'>{tile_info['icon']}</span>
-                        <span style='font-weight: 700; font-size: 14px; color: #111827;'>{tile_info['title']}</span>
+                        <span style='font-weight: 700; font-size: 14px; color: #ffffff;'>{tile_info['title']}</span>
                     </div>
                     <div style='font-size: 11px; color: #6b7280; line-height: 1.2;'>{tile_info['desc']}</div>
                 </div>
