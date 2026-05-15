@@ -65,22 +65,27 @@ st.markdown("""
             font-size: 12px !important;
             padding-bottom: 0px !important;
         }
-            
+
         /* ---------------------------------------------------
-           1. NUKE THE MASSIVE TOP GAP
-           Streamlit has a default 6rem padding at the top of 
-           the screen. This forces it down to 1rem.
+           1. NUKE THE MASSIVE TOP GAP (THE ULTIMATE VERSION)
         --------------------------------------------------- */
-        .block-container {
-            padding-top: 1rem !important; 
-            padding-bottom: 1rem !important;
+        /* Target every possible wrapper Streamlit uses for the main page */
+        .block-container, 
+        div[data-testid="stAppViewBlockContainer"], 
+        div[data-testid="stAppViewContainer"] > section > div {
+            padding-top: 0rem !important; 
+            margin-top: 0rem !important;
         }
         
-        /* Completely destroy the invisible header container */
+        /* Completely destroy the header and any ghost space it leaves */
         header[data-testid="stHeader"] {
             display: none !important; 
             height: 0px !important;
-        }
+            min-height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
+        }    
+        
 
         /* ---------------------------------------------------
            2. THE NUCLEAR 2-COLUMN MOBILE GRID
