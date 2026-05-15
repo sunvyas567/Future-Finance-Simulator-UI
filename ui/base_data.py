@@ -445,38 +445,38 @@ def render_base_data_mobile(config, user_data: dict, user: dict):
 
     # 1. 🚨 THE BULLETPROOF iOS CSS HACK
     # 1. 🚨 THE ULTIMATE iOS COLUMN OVERRIDE
-    st.markdown("""
-    <style>
-        /* Catch all mobile devices including Pro Max iPhones in landscape */
-        @media screen and (max-width: 1000px) {
-            /* Force the parent container to remain a flex row */
-            div[data-testid="stHorizontalBlock"] {
-                display: flex !important;
-                flex-direction: row !important;
-                flex-wrap: wrap !important;
-                justify-content: space-between !important;
-            }
-            /* Bruteforce EVERY width property so Streamlit cannot collapse it */
-            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-                width: 48% !important;
-                min-width: 48% !important;
-                max-width: 48% !important;
-                flex: 0 0 48% !important;
-                display: block !important;
-                margin-bottom: 10px !important;
-            }
-        }
+    #st.markdown("""
+    #<style>
+    #    /* Catch all mobile devices including Pro Max iPhones in landscape */
+    #    @media screen and (max-width: 1000px) {
+    #        /* Force the parent container to remain a flex row */
+    #        div[data-testid="stHorizontalBlock"] {
+    #            display: flex !important;
+    #            flex-direction: row !important;
+    #            flex-wrap: wrap !important;
+    #            justify-content: space-between !important;
+    #        }
+    #        /* Bruteforce EVERY width property so Streamlit cannot collapse it */
+    #        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    #            width: 48% !important;
+    #            min-width: 48% !important;
+    #            max-width: 48% !important;
+    #            flex: 0 0 48% !important;
+    #            display: block !important;
+    #            margin-bottom: 10px !important;
+    #        }
+    #    }
         
-        .stNumberInput {
-            margin-bottom: 0px !important;
-        }
+    #    .stNumberInput {
+    #        margin-bottom: 0px !important;
+    #    }
         
-        /* Ultra-tight padding */
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            padding: 10px 8px !important; 
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    #    /* Ultra-tight padding */
+    #    div[data-testid="stVerticalBlockBorderWrapper"] {
+    #        padding: 10px 8px !important; 
+    #    }
+    #</style>
+    #""", unsafe_allow_html=True)
     
 
     # 1. Subtle Country Selector

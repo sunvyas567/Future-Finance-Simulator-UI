@@ -9,6 +9,9 @@ from ui.auth_pages import render_login, render_register
 # 1. THIS MUST BE THE VERY FIRST STREAMLIT COMMAND
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
+# ==========================================================
+    # GLOBAL MOBILE CSS HACKS
+    # ==========================
 # 2. INJECT GLOBAL CSS (This nukes the header across all pages)
 st.markdown("""
     <style>
@@ -61,6 +64,56 @@ st.markdown("""
         .stTextInput label, .stNumberInput label, .stSelectbox label {
             font-size: 12px !important;
             padding-bottom: 0px !important;
+        }
+            
+        /* ---------------------------------------------------
+           1. NUKE THE MASSIVE TOP GAP
+           Streamlit has a default 6rem padding at the top of 
+           the screen. This forces it down to 1rem.
+        --------------------------------------------------- */
+        .block-container {
+            padding-top: 1rem !important; 
+            padding-bottom: 1rem !important;
+        }
+        
+        /* Completely destroy the invisible header container */
+        header[data-testid="stHeader"] {
+            display: none !important; 
+            height: 0px !important;
+        }
+
+        /* ---------------------------------------------------
+           2. THE NUCLEAR 2-COLUMN MOBILE GRID
+           Targets both old and new Streamlit class names to 
+           guarantee it works on Chrome/Safari iOS.
+        --------------------------------------------------- */
+        @media screen and (max-width: 1000px) {
+            div[data-testid="stHorizontalBlock"] {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                gap: 2% !important; /* Clean gap instead of margins */
+            }
+            
+            div[data-testid="stHorizontalBlock"] > div[data-testid="column"],
+            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+                width: 49% !important;
+                min-width: 49% !important;
+                max-width: 49% !important;
+                flex: 0 0 49% !important;
+                display: block !important;
+            }
+        }
+
+        /* ---------------------------------------------------
+           3. TILE PADDING COMPRESSION
+        --------------------------------------------------- */
+        .stNumberInput {
+            margin-bottom: 0px !important;
+        }
+        
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            padding: 10px 8px !important; 
         }
     </style>
 """, unsafe_allow_html=True)
