@@ -270,7 +270,7 @@ def render_recurring_expenses(config, user_data, user):
 # =========================================================
 #import streamlit as st
 
-def render_recurring_expenses_mobile(config, user_data, user):
+def render_recurring_expenses_mobile_notw(config, user_data, user):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
@@ -388,7 +388,7 @@ def render_recurring_expenses_mobile(config, user_data, user):
     </div>
     """, unsafe_allow_html=True)
 
-def render_recurring_expenses_mobile_old3(config, user_data, user):
+def render_recurring_expenses_mobile(config, user_data, user):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
