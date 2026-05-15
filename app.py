@@ -69,24 +69,42 @@ st.markdown("""
         /* ---------------------------------------------------
            1. NUKE THE MASSIVE TOP GAP (THE ULTIMATE VERSION)
         --------------------------------------------------- */
-        /* Target every possible wrapper Streamlit uses for the main page */
+        /* ---------------------------------------------------
+           1. NUKE THE MASSIVE TOP GAP (FINAL BOSS VERSION)
+        --------------------------------------------------- */
+        /* 1. Strip the main container padding and ignore Apple's notch safe-area padding */
         .block-container, 
-        div[data-testid="stAppViewBlockContainer"], 
-        div[data-testid="stAppViewContainer"] > section > div {
-            padding-top: 0rem !important; 
-            margin-top: 0rem !important;
+        div[data-testid="stAppViewBlockContainer"] {
+            padding-top: 0px !important; 
+            margin-top: 0px !important;
+            padding-top: max(0px, env(safe-area-inset-top)) !important;
         }
         
-        /* Completely destroy the header and any ghost space it leaves */
+        /* 2. Streamlit's hidden flexbox gap that pushes elements down */
+        div[data-testid="stVerticalBlock"] {
+            gap: 0rem !important;
+        }
+
+        /* 3. Completely destroy the header and its ghost footprint */
         header[data-testid="stHeader"] {
             display: none !important; 
+            visibility: hidden !important;
             height: 0px !important;
             min-height: 0px !important;
             margin: 0px !important;
             padding: 0px !important;
-        }    
-        
+        }
 
+        /* 4. Streamlit injects an empty spacer div at the very top. This crushes it. */
+        .block-container > div:first-child {
+            margin-top: 0px !important;
+            padding-top: 0px !important;
+        }
+        /* Kills the padding inside the option menu itself */
+        div.nav-pills {
+            margin-top: 0px !important;
+            padding-top: 0px !important;
+        }
         /* ---------------------------------------------------
            2. THE NUCLEAR 2-COLUMN MOBILE GRID
            Targets both old and new Streamlit class names to 

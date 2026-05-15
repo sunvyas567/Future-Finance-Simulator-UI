@@ -265,7 +265,130 @@ def render_recurring_expenses(config, user_data, user):
 # =========================================================
 # MAIN UI (Monarch-Style Mobile)
 # =========================================================
+# =========================================================
+# MAIN UI (Monarch-Style Mobile Grid)
+# =========================================================
+#import streamlit as st
+
 def render_recurring_expenses_mobile(config, user_data, user):
+    is_guest = user is None
+    is_premium = user.get("is_premium", False) if user else False
+    currency = get_currency(user_data)
+    country = user_data.get("country", "IN")
+
+    st.markdown("### 🔁 Your Monthly Lifestyle")
+    st.caption("Enter your average monthly costs. Leave at 0 if not applicable.")
+
+    stage = _get_life_stage(user_data)
+    user_data.setdefault("recurring_expenses", {})
+    user_data["recurring_expenses"].setdefault(country, {})
+    expenses = user_data["recurring_expenses"][country]
+
+    input_fields = [f for f in config if _is_input_field(f)]
+    field_map = {f["Field Name"]: f for f in input_fields}
+
+    # --------------------------------------------------
+    # Country Templates (Sleek Expander)
+    # --------------------------------------------------
+    # Assuming EXPENSE_TEMPLATES is imported/defined above in your actual file
+    try:
+        templates = EXPENSE_TEMPLATES.get(country)
+        if templates and not is_guest:
+            with st.expander("⚡ Auto-Fill a Lifestyle Baseline"):
+                lifestyle = st.selectbox("Choose a starting point:", list(templates.keys()), key="recurring_template")
+                if st.button("Apply", use_container_width=True):
+                    for field, value in templates[lifestyle].items():
+                        if field in field_map:
+                            expenses[field] = {"monthly": float(value)}
+                    st.success("Template applied! Adjust below.")
+    except NameError:
+        pass # Failsafe in case EXPENSE_TEMPLATES isn't in scope
+
+    st.divider()
+
+    # --------------------------------------------------
+    # Tile Data Dictionary (Matches our No-Scroll Design)
+    # --------------------------------------------------
+    TILE_DATA = {
+        "Rent": {"icon": "🏠", "title": "Housing", "desc": "Rent or mortgage"},
+        "Food": {"icon": "🍔", "title": "Food", "desc": "Groceries & dining"},
+        "Transport": {"icon": "🚗", "title": "Transport", "desc": "Fuel & transit"},
+        "Insurance": {"icon": "🛡️", "title": "Insurance", "desc": "Health & life"},
+        "Education": {"icon": "🎒", "title": "Education", "desc": "Tuition fees"},
+        "Medical": {"icon": "💊", "title": "Medical", "desc": "Routine costs"},
+        "Lifestyle": {"icon": "🛍️", "title": "Lifestyle", "desc": "Shopping & fun"}
+    }
+
+    # --------------------------------------------------
+    # Render fields (Mobile Grid Layout)
+    # --------------------------------------------------
+    cols = st.columns(2)
+
+    for i, field in enumerate(input_fields):
+        name = field["Field Name"]
+        label = field["Field Description"]
+        default = float(field.get("Field Default Value", 0))
+        stored_value = float(expenses.get(name, {}).get("monthly", default))
+        value_key = f"rec_{country}_{name}_value"
+
+        # Match the field to our Tile Dictionary
+        tile_info = {"icon": "🔁", "title": "Expense", "desc": "Monthly cost"}
+        for keyword, data in TILE_DATA.items():
+            if keyword.lower() in label.lower() or keyword.lower() in name.lower():
+                tile_info = data
+                break
+
+        # Alternate columns
+        col = cols[i % 2]
+
+        with col:
+            with st.container(border=True):
+                # HTML Layout: Icon + Title side-by-side, Description below
+                # Using #ffffff (White) for Title and #e5e7eb (Light Gray) for Description
+                st.markdown(f"""
+                <div style='margin-bottom: 8px;'>
+                    <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
+                        <span style='font-size: 20px;'>{tile_info['icon']}</span>
+                        <span style='font-weight: 700; font-size: 14px; color: #ffffff;'>{tile_info['title']}</span>
+                    </div>
+                    <div style='font-size: 11px; color: #e5e7eb; line-height: 1.2;'>{tile_info['desc']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # The hidden-label number input
+                value = st.number_input(
+                    f"Monthly ({currency})",
+                    min_value=0.0,
+                    value=stored_value,
+                    step=1000.0,
+                    disabled=is_guest or not is_premium,
+                    key=value_key,
+                    label_visibility="collapsed"
+                )
+                
+                if not is_guest:
+                    expenses[name] = {"monthly": value}
+
+    # --------------------------------------------------
+    # Snapshot (App Style Summary)
+    # --------------------------------------------------
+    must_yearly = sum(data.get("monthly", 0) * 12 for name, data in expenses.items() if not name.endswith("Opt"))
+    optional_yearly = sum(data.get("monthly", 0) * 12 for name, data in expenses.items() if name.endswith("Opt"))
+
+    user_data["AnnualMustExpenses"] = {"input": round(must_yearly, 2)}
+    user_data["AnnualOptionalExpenses"] = {"input": round(optional_yearly, 2)}
+    
+    total_yearly = must_yearly + optional_yearly
+
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 15px; border-left: 5px solid #22c55e; margin-top: 15px;">
+        <p style="margin:0; font-size: 14px; color: #6c757d;">Total Yearly Spending</p>
+        <h2 style="margin:0; color: #111827;">{currency}{total_yearly:,.0f}</h2>
+        <p style="margin:0; font-size: 12px; color: #6c757d; margin-top: 5px;">Mandatory: {currency}{must_yearly:,.0f} | Leisure: {currency}{optional_yearly:,.0f}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_recurring_expenses_mobile_old3(config, user_data, user):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
