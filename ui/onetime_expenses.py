@@ -321,7 +321,139 @@ def render_onetime_expenses(config, user_data, user):
 # =========================================================
 #import streamlit as st
 
+# =========================================================
+# MAIN UI (Monarch-Style Mobile Grid)
+# =========================================================
+import streamlit as st
+
 def render_onetime_expenses_mobile(config, user_data, user):
+    is_guest = user.get("is_guest", False)
+    is_premium = user.get("is_premium", False) if user else False
+    currency = get_currency(user_data)
+    country = user_data.get("country", "IN")
+
+    # 1. 🚨 THE BULLETPROOF iOS CSS HACK
+    st.markdown("""
+    <style>
+        /* Force row layout for iOS Safari */
+        @media screen and (max-width: 850px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                justify-content: space-between !important;
+            }
+            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+                width: 48% !important;
+                flex: 0 0 48% !important;
+                min-width: 48% !important;
+                margin-bottom: 10px !important;
+            }
+        }
+        
+        .stNumberInput {
+            margin-bottom: 0px !important;
+        }
+        
+        /* Ultra-tight padding */
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            padding: 10px 8px !important; 
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 🎯 Big Life Milestones")
+    st.caption("Enter amounts for your future goals. Leave at 0 if not applicable.")
+
+    stage = _get_life_stage(user_data)
+    user_data.setdefault("onetime_expenses", {})
+    user_data["onetime_expenses"].setdefault(country, {})
+    expenses = user_data["onetime_expenses"][country]
+
+    input_fields = [f for f in config if "Field Default Value" in f and "Field Description" in f]
+    visible_fields = []
+
+    for field in input_fields:
+        key = field["Field Name"]
+        label = field["Field Description"]
+        stage_label = _apply_stage_rules(stage, key, label)
+        if stage_label is None:
+            expenses[key] = {"input": 0.0}
+            continue
+        field["__stage_label"] = stage_label
+        visible_fields.append(field)
+
+    # 2. Tile Data Dictionary (Description is back!)
+    TILE_DATA = {
+        "Education": {"icon": "🎓", "title": "Education", "desc": "College & degrees"},
+        "Vehicle": {"icon": "🚗", "title": "Vehicle", "desc": "Buy or upgrade"},
+        "House": {"icon": "🏠", "title": "Housing", "desc": "Downpayments"},
+        "Marriage": {"icon": "💍", "title": "Marriage", "desc": "Wedding fund"},
+        "Travel": {"icon": "✈️", "title": "Travel", "desc": "Dream vacation"},
+        "Medical": {"icon": "💊", "title": "Medical", "desc": "Health reserve"},
+        "Property": {"icon": "🏢", "title": "Real Estate", "desc": "Investments"}
+    }
+
+    # 3. Render the Mobile Grid
+    cols = st.columns(2)
+
+    for i, field in enumerate(visible_fields):
+        key = field["Field Name"]
+        label = field.get("__stage_label", field["Field Description"])
+        default = float(field.get("Field Default Value", 0))
+        stored_value = float(expenses.get(key, {}).get("input", default))
+        value_key = f"onetime_{country}_{key}_value"
+
+        # Match the field to our Tile Dictionary
+        tile_info = {"icon": "💸", "title": "Milestone", "desc": "Future goal"}
+        for keyword, data in TILE_DATA.items():
+            if keyword.lower() in label.lower() or keyword.lower() in key.lower():
+                tile_info = data
+                break
+
+        # Alternate between left and right column
+        col = cols[i % 2]
+
+        with col:
+            with st.container(border=True):
+                # HTML Layout: Icon + Title side-by-side, Description below
+                st.markdown(f"""
+                <div style='margin-bottom: 8px;'>
+                    <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
+                        <span style='font-size: 20px;'>{tile_info['icon']}</span>
+                        <span style='font-weight: 700; font-size: 14px; color: #111827;'>{tile_info['title']}</span>
+                    </div>
+                    <div style='font-size: 11px; color: #6b7280; line-height: 1.2;'>{tile_info['desc']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # The hidden-label number input
+                value = st.number_input(
+                    f"Amount ({currency})",
+                    min_value=0.0,
+                    value=stored_value,
+                    step=10000.0,
+                    disabled=is_guest or not is_premium,
+                    key=value_key,
+                    label_visibility="collapsed" 
+                )
+                
+                if not is_guest:
+                    expenses[key] = {"input": value}
+
+    # -------------------------------------------------
+    # Summary & Total (App Style)
+    # -------------------------------------------------
+    total = sum(v.get("input", 0) for v in expenses.values())
+
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 15px; border-left: 5px solid #ec4899; margin-top: 15px;">
+        <p style="margin:0; font-size: 14px; color: #6c757d;">Total Planned Milestones</p>
+        <h2 style="margin:0; color: #111827;">{currency}{total:,.0f}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+def render_onetime_expenses_mobile_old3(config, user_data, user):
     is_guest = user.get("is_guest", False)
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
