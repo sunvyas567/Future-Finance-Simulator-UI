@@ -429,7 +429,172 @@ def render_base_data(config, user_data: dict, user: dict):
 # =========================================================
 # UI (Wealthfront/Mobile Style)
 # =========================================================
+# =========================================================
+# UI (Wealthfront/Mobile Style)
+# =========================================================
+import streamlit as st
+
 def render_base_data_mobile(config, user_data: dict, user: dict):
+    is_guest = user is None
+    is_premium = user.get("is_premium", False) if user else False
+    COUNTRIES = {"India": "IN", "United States": "US", "United Kingdom": "UK"}
+    user_data.setdefault("country", "IN")
+
+    def Reset_Active_Scenario(): 
+        st.session_state["_active_scenario_loaded"] = None  
+
+    # 1. 🚨 THE BULLETPROOF iOS CSS HACK
+    st.markdown("""
+    <style>
+        @media screen and (max-width: 850px) {
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                justify-content: space-between !important;
+            }
+            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+                width: 48% !important;
+                flex: 0 0 48% !important;
+                min-width: 48% !important;
+                margin-bottom: 10px !important;
+            }
+        }
+        
+        .stNumberInput {
+            margin-bottom: 0px !important;
+        }
+        
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            padding: 10px 8px !important; 
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 1. Subtle Country Selector
+    selected = st.selectbox(
+        "🌍 Where do you live?",
+        list(COUNTRIES.keys()),
+        index=list(COUNTRIES.values()).index(user_data["country"]),
+        on_change=Reset_Active_Scenario,
+        disabled=is_guest,
+    )
+    user_data["country"] = COUNTRIES[selected]
+    # Make sure this helper exists in your code imports!
+    # hydrate_initial_corpus_defaults(user_data, user_data["country"]) 
+    currency = get_currency(user_data)
+
+    st.markdown("---")
+    st.markdown("### 👤 Let's get to know you")
+
+    # 2. Conversational Sliders (Tactile Mobile Input)
+    with st.container(border=True):
+        user_data.setdefault("GLAge", {"input": 35})
+        user_data.setdefault("GLProjectionYears", {"input": 25})
+
+        age = st.slider(
+            "How old are you today?",
+            min_value=18, max_value=80,
+            value=int(user_data["GLAge"]["input"]),
+            disabled=is_guest or not is_premium,
+        )
+        if not is_guest: user_data["GLAge"]["input"] = age
+
+        max_years = 60 if is_premium else 2
+        safe_years = min(int(user_data["GLProjectionYears"]["input"]), max_years)
+        
+        years = st.slider(
+            "How many years into the future should we look?",
+            min_value=1, max_value=max_years,
+            value=safe_years,
+            disabled=is_guest or not is_premium,
+            help="Free users are limited to 2 years."
+        )
+        if not is_guest: user_data["GLProjectionYears"]["input"] = years
+
+    # 3. Starting Corpus (Mobile Grid Layout)
+    st.markdown("### 💰 Your Starting Line")
+    st.caption("Enter current balances. Leave at 0 if you don't have this account.")
+
+    # Added short "desc" to each config to match our tile design
+    if user_data["country"] == "IN":
+        corpus_config = [
+            {"key": "PF", "label": "Provident Fund", "icon": "🏦", "desc": "Employer tied"},
+            {"key": "PPF", "label": "PPF Account", "icon": "📘", "desc": "Tax free"},
+            {"key": "NPS", "label": "NPS Balance", "icon": "📊", "desc": "Retirement tier"},
+            {"key": "OTHER", "label": "Other Savings", "icon": "➕", "desc": "Cash & equity"},
+        ]
+    elif user_data["country"] == "US":
+        corpus_config = [
+            {"key": "401K", "label": "401(k)", "icon": "🏦", "desc": "Employer match"}, 
+            {"key": "IRA", "label": "IRA", "icon": "📘", "desc": "Tax advantaged"}, 
+            {"key": "BROKERAGE", "label": "Brokerage", "icon": "📈", "desc": "Taxable investing"}, 
+            {"key": "OTHER", "label": "Other", "icon": "➕", "desc": "Cash & equity"}
+        ]
+    elif user_data["country"] == "UK":
+        corpus_config = [
+            {"key": "PENSION", "label": "Pension Fund", "icon": "🏦", "desc": "Workplace/SIPP"}, 
+            {"key": "ISA", "label": "ISA", "icon": "📘", "desc": "Tax free wrapper"}, 
+            {"key": "OTHER", "label": "Other", "icon": "➕", "desc": "Cash & equity"}
+        ]
+
+    def render_corpus_grid(corpus_config: list):
+        user_data.setdefault("initial_corpus", {})
+        country = user_data.get("country", "IN")
+        user_data["initial_corpus"].setdefault(country, {})
+        country_corpus = user_data["initial_corpus"][country]
+        total = 0
+
+        cols = st.columns(2)
+
+        for i, item in enumerate(corpus_config):
+            key = item["key"]
+            value_key = f"corpus_{country}_{key}_value"
+            
+            stored_value = float(country_corpus.get(key, 0.0))
+            col = cols[i % 2]
+
+            with col:
+                with st.container(border=True):
+                    # HTML Layout: Icon + Title side-by-side, Description below
+                    st.markdown(f"""
+                    <div style='margin-bottom: 8px;'>
+                        <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
+                            <span style='font-size: 20px;'>{item['icon']}</span>
+                            <span style='font-weight: 700; font-size: 14px; color: #111827;'>{item['label']}</span>
+                        </div>
+                        <div style='font-size: 11px; color: #6b7280; line-height: 1.2;'>{item.get('desc', 'Current balance')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # Hidden-label number input
+                    value = st.number_input(
+                        f"Amount ({currency})",
+                        min_value=0.0,
+                        value=stored_value,
+                        step=10000.0,
+                        disabled=is_guest or not is_premium,
+                        key=value_key,
+                        label_visibility="collapsed"
+                    )
+                    
+                    if not is_guest: 
+                        country_corpus[key] = value
+                    
+                    total += value
+
+        return total
+
+    total = render_corpus_grid(corpus_config)
+
+    # Big, bold summary at the bottom
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 15px; border-left: 5px solid #4f46e5; margin-top: 15px;">
+        <p style="margin:0; font-size: 14px; color: #6c757d;">Total Starting Wealth</p>
+        <h2 style="margin:0; color: #111827;">{currency}{total:,.0f}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+def render_base_data_mobile_old2(config, user_data: dict, user: dict):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     COUNTRIES = {"India": "IN", "United States": "US", "United Kingdom": "UK"}
