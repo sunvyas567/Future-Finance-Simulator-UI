@@ -328,26 +328,37 @@ def render_onetime_expenses_mobile(config, user_data, user):
     country = user_data.get("country", "IN")
 
     # 1. 🚨 THE CSS HACK: Forces 2-column grid on mobile & removes input padding
+    # 1. 🚨 THE UPDATED CSS HACK (Bulletproof for iOS & Android)
     st.markdown("""
     <style>
         @media (max-width: 600px) {
-            [data-testid="stHorizontalBlock"] {
+            /* Force row layout on mobile instead of Streamlit's default column stacking */
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: row !important;
                 flex-wrap: wrap !important;
-                gap: 10px !important;
+                gap: 0.5rem !important;
             }
-            [data-testid="column"] {
-                width: calc(50% - 10px) !important;
-                flex: 1 1 calc(50% - 10px) !important;
-                min-width: calc(50% - 10px) !important;
+            /* Force exact 50% width minus the gap for a perfect 2-grid */
+            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+                width: calc(50% - 0.5rem) !important;
+                flex: 1 1 calc(50% - 0.5rem) !important;
+                min-width: calc(50% - 0.5rem) !important;
             }
         }
-        /* Tighten up the number input to save vertical space */
+        
+        /* Remove the negative margin to prevent overlapping! */
         .stNumberInput {
-            margin-top: -10px;
+            margin-bottom: 0px !important;
+        }
+        
+        /* Compress the padding inside Streamlit's borders so tiles aren't huge */
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            padding: 10px !important; 
         }
     </style>
     """, unsafe_allow_html=True)
 
+    
     st.markdown("### 🎯 Big Life Milestones")
     st.caption("Enter amounts for your future goals. Leave at 0 if not applicable.")
 
@@ -402,24 +413,24 @@ def render_onetime_expenses_mobile(config, user_data, user):
 
         with col:
             with st.container(border=True):
-                # HTML layout for dense, centered tile content
+                # HTML layout: I added margin-bottom: 10px to create a safe gap above the input box
                 st.markdown(f"""
-                <div style='text-align: center; padding-bottom: 5px;'>
+                <div style='text-align: center; margin-bottom: 10px;'>
                     <div style='font-size: 28px; margin-bottom: 2px;'>{tile_info['icon']}</div>
                     <div style='font-weight: bold; font-size: 14px; color: #111827;'>{tile_info['title']}</div>
                     <div style='font-size: 11px; color: #6b7280; line-height: 1.2;'>{tile_info['desc']}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # The hidden-label number input
+                # The hidden-label number input (Make sure label_visibility="collapsed" is exactly like this)
                 value = st.number_input(
-                    f"Amount ({currency})",
+                    f"Amount ({currency})", # This text is hidden but required by Streamlit
                     min_value=0.0,
                     value=stored_value,
                     step=10000.0,
                     disabled=is_guest or not is_premium,
                     key=value_key,
-                    label_visibility="collapsed" # Hides the label to save vertical space
+                    label_visibility="collapsed" # This completely removes the label space
                 )
                 
                 if not is_guest:
