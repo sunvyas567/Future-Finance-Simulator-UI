@@ -276,7 +276,7 @@ def render_recurring_expenses_mobile(config, user_data, user):
     currency = get_currency(user_data)
     country = user_data.get("country", "IN")
 
-    st.markdown("### 🔁 Your Monthly Lifestyle")
+    st.markdown("### 🔁 Your Monthly Lifestyle - N")
     st.caption("Enter your average monthly costs. Leave at 0 if not applicable.")
 
     stage = _get_life_stage(user_data)
