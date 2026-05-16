@@ -72,6 +72,27 @@ st.markdown("""
         /* ---------------------------------------------------
            1. NUKE THE MASSIVE TOP GAP (FINAL BOSS VERSION)
         --------------------------------------------------- */
+        /* ---------------------------------------------------
+           1. FIX THE TOP GAP (BALANCED VERSION)
+        --------------------------------------------------- */
+        /* Give just enough top padding (1.5rem) to clear the iPhone notch/URL bar safely */
+        .block-container, 
+        div[data-testid="stAppViewBlockContainer"] {
+            padding-top: 1.5rem !important; 
+            padding-bottom: 1rem !important;
+        }
+        
+        /* Completely destroy the header and its ghost footprint */
+        header[data-testid="stHeader"] {
+            display: none !important; 
+            height: 0px !important;
+            min-height: 0px !important;
+        }
+
+        /* ⚠️ I completely deleted the "stVerticalBlock { gap: 0rem }" rule. 
+           This restores the natural spacing inside your Login, Base Data, 
+           and Expense cards so the text stops overlapping!
+        */
         /* 1. Strip the main container padding and ignore Apple's notch safe-area padding */
         .block-container, 
         div[data-testid="stAppViewBlockContainer"] {
@@ -81,9 +102,9 @@ st.markdown("""
         }
         
         /* 2. Streamlit's hidden flexbox gap that pushes elements down */
-        div[data-testid="stVerticalBlock"] {
-            gap: 0rem !important;
-        }
+        /*div[data-testid="stVerticalBlock"] { */
+        /*    gap: 0rem !important; */
+        /*} */
 
         /* 3. Completely destroy the header and its ghost footprint */
         header[data-testid="stHeader"] {
