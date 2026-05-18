@@ -270,7 +270,7 @@ def render_recurring_expenses(config, user_data, user):
 # =========================================================
 #import streamlit as st
 
-def render_recurring_expenses_mobile_notw(config, user_data, user):
+def render_recurring_expenses_mobile(config, user_data, user):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
@@ -309,7 +309,7 @@ def render_recurring_expenses_mobile_notw(config, user_data, user):
     # --------------------------------------------------
     # Tile Data Dictionary (Matches our No-Scroll Design)
     # --------------------------------------------------
-    TILE_DATA = {
+    TILE_DATA_OLD = {
         "Rent": {"icon": "🏠", "title": "Housing", "desc": "Rent or mortgage"},
         "Food": {"icon": "🍔", "title": "Food", "desc": "Groceries & dining"},
         "Transport": {"icon": "🚗", "title": "Transport", "desc": "Fuel & transit"},
@@ -319,6 +319,44 @@ def render_recurring_expenses_mobile_notw(config, user_data, user):
         "Lifestyle": {"icon": "🛍️", "title": "Lifestyle", "desc": "Shopping & fun"}
     }
 
+    # --------------------------------------------------
+    # Tile Data Dictionary (Comprehensive for IN, US, UK)
+    # Note: Specific multi-word phrases MUST go first!
+    # --------------------------------------------------
+    TILE_DATA = {
+        # 1. Specific Multi-Word Matches (Top Priority)
+        "Water & Electricity": {"icon": "💡", "title": "Utilities", "desc": "Power & water"},
+        "House Repairs": {"icon": "🛠️", "title": "Repairs", "desc": "Home maintenance"},
+        "Maid Services": {"icon": "🧹", "title": "Maid/Help", "desc": "Domestic help"},
+        "Vehicle Insurance": {"icon": "🛡️", "title": "Auto Ins.", "desc": "Car premiums"},
+        "Vehicle Maintenance": {"icon": "🔧", "title": "Car Maint.", "desc": "Servicing"},
+        "Medical Insurance": {"icon": "⚕️", "title": "Health Ins.", "desc": "Medical premiums"},
+        "Health Insurance": {"icon": "⚕️", "title": "Health Ins.", "desc": "Medical premiums"},
+        "Property Tax": {"icon": "🏡", "title": "Property Tax", "desc": "Municipal tax"},
+        "Council Tax": {"icon": "🏛️", "title": "Council Tax", "desc": "Local UK tax"},
+        "Internet & Mobile": {"icon": "📱", "title": "Telecom", "desc": "WiFi & mobile"},
+        "Phone & Internet": {"icon": "📱", "title": "Telecom", "desc": "WiFi & mobile"},
+        "TV & OTT": {"icon": "📺", "title": "Streaming", "desc": "Subscriptions"},
+        "Foreign Travel": {"icon": "✈️", "title": "Global Travel", "desc": "Intl. vacations"},
+        "Domestic Travel": {"icon": "🧳", "title": "Local Travel", "desc": "Inland trips"},
+        "Functions & Events": {"icon": "🎊", "title": "Events", "desc": "Weddings & functions"},
+        "Miscellaneous Tax": {"icon": "🧾", "title": "Other Taxes", "desc": "Misc taxation"},
+        "Other Optional": {"icon": "✨", "title": "Leisure", "desc": "Optional spending"},
+        "Other Savings": {"icon": "💰", "title": "Savings", "desc": "Cash & equity"},
+
+        # 2. Single-Word Fallbacks (Lower Priority)
+        "Housing": {"icon": "🏠", "title": "Housing", "desc": "Rent/Mortgage"},
+        "Rent": {"icon": "🏠", "title": "Housing", "desc": "Rent/Mortgage"},
+        "Utilities": {"icon": "🔌", "title": "Utilities", "desc": "Gas, water, power"},
+        "Groceries": {"icon": "🛒", "title": "Groceries", "desc": "Daily supplies"},
+        "Food": {"icon": "🍔", "title": "Food", "desc": "Dining & groceries"},
+        "Transport": {"icon": "🚆", "title": "Transport", "desc": "Commute & transit"},
+        "Fuel": {"icon": "⛽", "title": "Fuel", "desc": "Petrol/Diesel"},
+        "Entertainment": {"icon": "🍿", "title": "Entertainment", "desc": "Movies & outings"},
+        "Internet": {"icon": "🌐", "title": "Internet", "desc": "Broadband"},
+        "Misc": {"icon": "🛍️", "title": "Miscellaneous", "desc": "Other costs"},
+        "Other": {"icon": "➕", "title": "Other Costs", "desc": "Unplanned items"}
+    }
     # --------------------------------------------------
     # Render fields (Mobile Grid Layout)
     # --------------------------------------------------
@@ -388,7 +426,7 @@ def render_recurring_expenses_mobile_notw(config, user_data, user):
     </div>
     """, unsafe_allow_html=True)
 
-def render_recurring_expenses_mobile(config, user_data, user):
+def render_recurring_expenses_mobile_working_old(config, user_data, user):
     is_guest = user is None
     is_premium = user.get("is_premium", False) if user else False
     currency = get_currency(user_data)
@@ -421,7 +459,7 @@ def render_recurring_expenses_mobile(config, user_data, user):
     st.divider()
 
     # Conversational Prompts
-    FRIENDLY_PROMPTS = {
+    FRIENDLY_PROMPTS_OLD = {
         "Rent": "🏠 Rent or mortgage payment?",
         "Food": "🍔 Groceries and dining out?",
         "Transport": "🚗 Transportation & fuel?",
@@ -429,6 +467,44 @@ def render_recurring_expenses_mobile(config, user_data, user):
         "Education": "🎒 School or tuition fees?",
         "Medical": "💊 Routine medical costs?",
         "Lifestyle": "🛍️ Shopping & entertainment?"
+    }
+    # --------------------------------------------------
+    # Tile Data Dictionary (Comprehensive for IN, US, UK)
+    # Note: Specific multi-word phrases MUST go first!
+    # --------------------------------------------------
+    FRIENDLY_PROMPTS = {
+        # 1. Specific Multi-Word Matches (Top Priority)
+        "Water & Electricity": {"icon": "💡", "title": "Utilities", "desc": "Power & water"},
+        "House Repairs": {"icon": "🛠️", "title": "Repairs", "desc": "Home maintenance"},
+        "Maid Services": {"icon": "🧹", "title": "Maid/Help", "desc": "Domestic help"},
+        "Vehicle Insurance": {"icon": "🛡️", "title": "Auto Ins.", "desc": "Car premiums"},
+        "Vehicle Maintenance": {"icon": "🔧", "title": "Car Maint.", "desc": "Servicing"},
+        "Medical Insurance": {"icon": "⚕️", "title": "Health Ins.", "desc": "Medical premiums"},
+        "Health Insurance": {"icon": "⚕️", "title": "Health Ins.", "desc": "Medical premiums"},
+        "Property Tax": {"icon": "🏡", "title": "Property Tax", "desc": "Municipal tax"},
+        "Council Tax": {"icon": "🏛️", "title": "Council Tax", "desc": "Local UK tax"},
+        "Internet & Mobile": {"icon": "📱", "title": "Telecom", "desc": "WiFi & mobile"},
+        "Phone & Internet": {"icon": "📱", "title": "Telecom", "desc": "WiFi & mobile"},
+        "TV & OTT": {"icon": "📺", "title": "Streaming", "desc": "Subscriptions"},
+        "Foreign Travel": {"icon": "✈️", "title": "Global Travel", "desc": "Intl. vacations"},
+        "Domestic Travel": {"icon": "🧳", "title": "Local Travel", "desc": "Inland trips"},
+        "Functions & Events": {"icon": "🎊", "title": "Events", "desc": "Weddings & functions"},
+        "Miscellaneous Tax": {"icon": "🧾", "title": "Other Taxes", "desc": "Misc taxation"},
+        "Other Optional": {"icon": "✨", "title": "Leisure", "desc": "Optional spending"},
+        "Other Savings": {"icon": "💰", "title": "Savings", "desc": "Cash & equity"},
+
+        # 2. Single-Word Fallbacks (Lower Priority)
+        "Housing": {"icon": "🏠", "title": "Housing", "desc": "Rent/Mortgage"},
+        "Rent": {"icon": "🏠", "title": "Housing", "desc": "Rent/Mortgage"},
+        "Utilities": {"icon": "🔌", "title": "Utilities", "desc": "Gas, water, power"},
+        "Groceries": {"icon": "🛒", "title": "Groceries", "desc": "Daily supplies"},
+        "Food": {"icon": "🍔", "title": "Food", "desc": "Dining & groceries"},
+        "Transport": {"icon": "🚆", "title": "Transport", "desc": "Commute & transit"},
+        "Fuel": {"icon": "⛽", "title": "Fuel", "desc": "Petrol/Diesel"},
+        "Entertainment": {"icon": "🍿", "title": "Entertainment", "desc": "Movies & outings"},
+        "Internet": {"icon": "🌐", "title": "Internet", "desc": "Broadband"},
+        "Misc": {"icon": "🛍️", "title": "Miscellaneous", "desc": "Other costs"},
+        "Other": {"icon": "➕", "title": "Other Costs", "desc": "Unplanned items"}
     }
 
     # --------------------------------------------------
