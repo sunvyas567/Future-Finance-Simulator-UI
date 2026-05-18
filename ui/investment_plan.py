@@ -1773,7 +1773,7 @@ def _del_scen(plan, active):
 # =========================================================
 # MAIN UI (Monarch-Style Interactive Dashboard)
 # =========================================================
-def render_investment_plan_mobile(user_data: dict, user: dict):
+def render_investment_plan_mobile_old_working_redesigned(user_data: dict, user: dict):
     is_guest = user.get("is_guest", False)
     is_premium = user.get("is_premium", False)
     country = user_data.get("country", "IN")
@@ -2050,3 +2050,353 @@ def render_investment_plan_mobile(user_data: dict, user: dict):
 #def _del_scen(plan, active):
 #    del plan["scenarios"][active]
 #    plan["active_scenario"] = "Base"
+
+# =========================================================
+# MAIN UI (Monarch-Style Interactive Dashboard)
+# =========================================================
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import copy
+
+def render_investment_plan_mobile(user_data: dict, user: dict):
+    is_guest = user.get("is_guest", False)
+    is_premium = user.get("is_premium", False)
+    country = user_data.get("country", "IN")
+    currency = get_currency(user_data)
+    stage = _get_life_stage(user_data)
+    age = get_user_age(user_data)
+    is_mobile = st.session_state.get("is_mobile", False)
+
+    st.header("📊 Your Investment Strategy")
+    st.caption("Design your cashflow and watch your wealth grow over time.")
+
+    # ---------------------------------------------------------
+    # SCENARIO INITIALIZATION
+    # ---------------------------------------------------------
+    user_data.setdefault("investment_plan", {})
+    user_data["investment_plan"].setdefault(country, {})
+    plan = user_data["investment_plan"][country]
+
+    ensure_scenarios(plan, country)
+    active = plan.get("active_scenario", "Base")
+    scenario = plan["scenarios"][active]
+    editable = not is_guest
+
+    default = _default_scenario(country)
+    for sc in plan["scenarios"].values():
+        for section in ["allocations", "rates", "income_sources", "withdrawal"]:
+            sc.setdefault(section, {})
+            for k, v in default[section].items():
+                sc[section].setdefault(k, v)
+
+    if not is_guest:
+        base = plan["scenarios"]["Base"]
+        if "Conservative" not in plan["scenarios"]:
+            plan["scenarios"]["Conservative"] = _derive_scenario(base, "conservative")
+        if "Aggressive" not in plan["scenarios"]:
+            plan["scenarios"]["Aggressive"] = _derive_scenario(base, "aggressive")
+
+    # =========================================================
+    # 1. STARTING CORPUS (THE FOUNDATION)
+    # =========================================================
+    corpus = user_data["initial_corpus"][country] 
+    total_corpus = round(sum(corpus.values()), 2)
+
+    # Build the HTML breakdown of individual accounts for the box
+    corpus_breakdown_html = ""
+    for k, v in corpus.items():
+        if v > 0:
+            friendly_name = k.replace("_", " ").title()
+            corpus_breakdown_html += f"""
+            <div style='display: flex; justify-content: space-between; font-size: 13px; color: #d4d4d8; margin-top: 6px;'>
+                <span>{friendly_name}</span>
+                <span>{currency}{v:,.0f}</span>
+            </div>
+            """
+    
+    # Hide the divider line if there are no sub-components
+    hr_line = "<hr style='border-color: #3f3f46; margin: 12px 0;'>" if corpus_breakdown_html else ""
+
+    st.markdown(f"""
+    <div style="background-color: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #6366f1; margin-bottom: 25px;">
+        <p style="margin:0; font-size: 14px; color: #a1a1aa;">Total Starting Corpus</p>
+        <h2 style="margin:0; color: #ffffff;">{currency}{total_corpus:,.0f}</h2>
+        {hr_line}
+        {corpus_breakdown_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+    if total_corpus == 0:
+        st.warning("Starting corpus is zero. Update your Base Data to see projections.")
+
+    # Engine Sync
+    allocation_model = build_allocation_model(country=country, age=age, corpus=total_corpus)
+    if not scenario.get("_engine_synced"):
+        scenario["allocations"] = allocation_model["allocations"].copy()
+        scenario["allocations"] = normalize_allocations(scenario["allocations"], country=country)
+        scenario["rates"] = allocation_model["rates"].copy()
+        scenario["_engine_synced"] = True
+
+    # =========================================================
+    # 2. OTHER INCOME SOURCES (TILE GRID)
+    # =========================================================
+    with ui_section("Passive Income", "💸"):
+        st.caption("Income generated outside of your core investments.")
+        
+        INCOME_TILE_DATA = {
+            "rental": {"icon": "🏠", "title": "Rental", "desc": "Real estate income"},
+            "pension": {"icon": "🧓", "title": "Pension", "desc": "Retirement payout"},
+            "annuity": {"icon": "📜", "title": "Annuity", "desc": "Fixed payouts"},
+            "dividends": {"icon": "📈", "title": "Dividends", "desc": "Stock yields"},
+            "social_security": {"icon": "🏛️", "title": "Social Sec.", "desc": "Gov benefits"},
+            "other": {"icon": "➕", "title": "Other", "desc": "Misc income"},
+        }
+        INCOME_FREQUENCY = {
+            "rental": "monthly", "pension": "monthly", "annuity": "monthly",
+            "social_security": "monthly", "dividends": "yearly", "other": "yearly",
+        }
+
+        visible_sources = get_visible_income_sources(stage, country)
+        cols = st.columns(2)
+
+        for i, key in enumerate(visible_sources):
+            value = scenario["income_sources"].get(key, 0)
+            tile_info = INCOME_TILE_DATA.get(key, {"icon": "💰", "title": key.title(), "desc": "Income"})
+            frequency = INCOME_FREQUENCY.get(key, "monthly")
+            
+            # Use keys exclusively to prevent state fighting
+            value_key = f"income_{active}_{key}_value"
+            if value_key not in st.session_state:
+                st.session_state[value_key] = float(value)
+            
+            col = cols[i % 2]
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"""
+                    <div style='margin-bottom: 8px;'>
+                        <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
+                            <span style='font-size: 20px;'>{tile_info['icon']}</span>
+                            <span style='font-weight: 700; font-size: 14px; color: #ffffff;'>{tile_info['title']}</span>
+                        </div>
+                        <div style='font-size: 11px; color: #e5e7eb; line-height: 1.2;'>{tile_info['desc']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    label_text = f"Monthly ({currency})" if frequency == "monthly" else f"Yearly ({currency})"
+                    
+                    st.number_input(
+                        label_text, min_value=0.0, step=1000.0,
+                        disabled=not editable, key=value_key, label_visibility="collapsed"
+                    )
+                    scenario["income_sources"][key] = st.session_state[value_key]
+
+        for k in list(scenario["income_sources"].keys()):
+            if k not in visible_sources:
+                scenario["income_sources"][k] = 0
+
+    # =========================================================
+    # 3. WITHDRAWALS
+    # =========================================================
+    with ui_section("Living Expenses", "💳"):
+        st.caption("How much do you need to withdraw from investments monthly?")
+        
+        wd_key = f"withdrawal_{active}"
+        if wd_key not in st.session_state:
+            st.session_state[wd_key] = float(scenario["withdrawal"]["monthly"])
+            
+        st.number_input(
+            f"Monthly Withdrawal ({currency})",
+            min_value=0.0, step=1000.0,
+            disabled=not editable, key=wd_key,
+        )
+        scenario["withdrawal"]["monthly"] = st.session_state[wd_key]
+        st.caption(f"📅 Yearly Impact: **{currency}{scenario['withdrawal']['monthly'] * 12:,.0f}**")
+
+    # =========================================================
+    # 4. INVESTMENT ALLOCATION (TILE GRID & CUSTOM ASSETS)
+    # =========================================================
+    with ui_section("Asset Allocation", "🧮"):
+        st.caption("Distribute your corpus across different growth vehicles.")
+
+        # ---- Add Custom Instrument ----
+        with st.expander("➕ Add Custom Investment"):
+            new_inst = st.text_input("Instrument Name (e.g., Crypto, Gold, Real Estate)")
+            new_rate = st.number_input("Expected Annual Return (%)", min_value=0.0, max_value=50.0, value=10.0, step=0.5)
+            if st.button("Add to Portfolio", use_container_width=True) and new_inst:
+                scenario["allocations"][new_inst] = 0.0
+                scenario["rates"][new_inst] = new_rate
+                st.session_state.alloc_state = scenario["allocations"].copy()
+                st.rerun()
+
+        # ---- State Sync ----
+        if st.session_state.get("_active_scenario_loaded") != active:
+            st.session_state.alloc_state = scenario["allocations"].copy()
+            st.session_state["_active_scenario_loaded"] = active
+
+        def allocation_changed(inst):
+            alloc = st.session_state.alloc_state.copy()
+            alloc[inst] = st.session_state[f"alloc_{inst}"]
+            # Rebalance remaining
+            alloc = redistribute_remaining(alloc, inst) 
+            st.session_state.alloc_state = alloc
+            scenario["allocations"] = alloc
+            # Force update all sibling inputs so they immediately reflect the math
+            for k, v in alloc.items():
+                st.session_state[f"alloc_{k}"] = float(v)
+
+        # ---- Grid Rendering ----
+        alloc_keys = list(scenario["allocations"].keys())
+        cols = st.columns(2)
+        
+        # Base config labels
+        base_labels = dict(_allocation_fields(country))
+
+        for i, key in enumerate(alloc_keys):
+            col = cols[i % 2]
+            label = base_labels.get(key, key)
+            rate = scenario["rates"].get(key, 0.0)
+            
+            # Setup session state key BEFORE rendering widget (Crucial for sync fix)
+            state_key = f"alloc_{key}"
+            if state_key not in st.session_state:
+                st.session_state[state_key] = float(st.session_state.alloc_state.get(key, 0.0))
+            
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"""
+                    <div style='margin-bottom: 8px;'>
+                        <div style='display: flex; align-items: center; gap: 6px; margin-bottom: 2px;'>
+                            <span style='font-size: 20px;'>📈</span>
+                            <span style='font-weight: 700; font-size: 14px; color: #ffffff;'>{label}</span>
+                        </div>
+                        <div style='font-size: 11px; color: #e5e7eb; line-height: 1.2;'>Return: {rate}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    st.number_input(
+                        f"Alloc %", min_value=float(0), max_value=float(100),
+                        step=float(1), key=state_key,
+                        disabled=not editable, on_change=allocation_changed, args=(key,),
+                        label_visibility="collapsed"
+                    )
+
+        # Validation & Pie Chart
+        total_alloc = sum(st.session_state.alloc_state.values())
+        if round(total_alloc, 2) != 100:
+            st.warning(f"Total: {total_alloc:.2f}% (Auto-balances to 100% in projection)")
+
+        df_alloc = pd.DataFrame(list(st.session_state.alloc_state.items()), columns=["Instrument", "Allocation"])
+        fig_pie = px.pie(df_alloc, values="Allocation", names="Instrument", hole=0.55)
+        fig_pie.update_layout(height=280, margin=dict(l=0, r=0, t=10, b=0), showlegend=False)
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+        # ---------------------------------------------------------
+        # ALLOCATION BREAKDOWN (TABLE & BAR CHART)
+        # ---------------------------------------------------------
+        st.markdown("### 🧮 Allocation & Income Breakdown")
+        
+        alloc_rows = []
+        for key in alloc_keys:
+            label = base_labels.get(key, key)
+            alloc_pct = float(scenario["allocations"].get(key, 0))
+            if alloc_pct > 0:
+                rate = float(scenario["rates"].get(key, 0.0))
+                allocated_amt = total_corpus * (alloc_pct / 100)
+                annual_income = allocated_amt * (rate / 100)
+                
+                alloc_rows.append({
+                    "Instrument": label,
+                    "Alloc (%)": alloc_pct,
+                    "Amount": allocated_amt,
+                    "Est. Yearly Income": annual_income
+                })
+        
+        if alloc_rows:
+            df_breakdown = pd.DataFrame(alloc_rows)
+            
+            # Format the dataframe cleanly for display
+            st.dataframe(
+                df_breakdown.style.format({
+                    "Alloc (%)": "{:.1f}%", 
+                    "Amount": f"{currency}{{x:,.0f}}", 
+                    "Est. Yearly Income": f"{currency}{{x:,.0f}}"
+                }), 
+                use_container_width=True,
+                hide_index=True
+            )
+
+            # Income Contribution Bar Chart
+            fig_income_bar = px.bar(
+                df_breakdown, 
+                x="Instrument", 
+                y="Est. Yearly Income", 
+                title="Yearly Income by Instrument",
+                text_auto=".2s", 
+                color="Instrument"
+            )
+            fig_income_bar.update_layout(
+                height=300, 
+                showlegend=False, 
+                margin=dict(l=0, r=0, t=30, b=0),
+                xaxis_title=None,
+                yaxis_title=f"Income ({currency})"
+            )
+            st.plotly_chart(fig_income_bar, use_container_width=True)
+
+
+    # =========================================================
+    # 5. DYNAMIC PROJECTIONS & SCENARIOS
+    # =========================================================
+    st.divider()
+    st.header("🚀 Future Projections")
+    
+    # ---- Scenario Switcher ----
+    scenario_names = list(plan["scenarios"].keys())
+    selected = st.selectbox("Compare Strategy:", scenario_names, index=scenario_names.index(active))
+    plan["active_scenario"] = selected
+    scenario = plan["scenarios"][selected]
+
+    # ---- Dynamic Years Slider ----
+    max_years = 60 if is_premium else 2
+    current_years = int(user_data.get("GLProjectionYears", {}).get("input", 25))
+    
+    new_years = st.slider(
+        "Years to Project:", 
+        min_value=1, max_value=max_years, 
+        value=min(current_years, max_years),
+        help="Drag to instantly update the charts below!"
+    )
+    user_data["GLProjectionYears"]["input"] = new_years
+
+    # ---- Calculate Math ----
+    result = calculate_projections(user_data, user)
+    active_res = result.get("active_result", {})
+    projections = active_res.get("projections", [])
+
+    if not projections:
+        st.info("Input valid numbers above to see your future trajectory.")
+        return
+
+    df = pd.DataFrame(projections)
+
+    # ---- Charts Only (No Tables) ----
+    if "EndingCorpus" in df.columns:
+        fig_corpus = px.area(
+            df, x="Year", y="EndingCorpus", 
+            title=f"Wealth Growth — {active_res.get('scenario', 'Base')}",
+            color_discrete_sequence=["#22c55e"]
+        )
+        fig_corpus.update_layout(height=300, margin=dict(l=0, r=0, t=40, b=0))
+        st.plotly_chart(fig_corpus, use_container_width=True)
+
+    income_cols = [c for c in df.columns if c.endswith("Income") and c != "TotalIncome"]
+    if income_cols:
+        fig_income = px.bar(
+            df, x="Year", y=income_cols, 
+            title="Income Generated Over Time",
+            barmode="stack"
+        )
+        fig_income.update_layout(height=300, margin=dict(l=0, r=0, t=40, b=0), legend_title=None)
+        st.plotly_chart(fig_income, use_container_width=True)
