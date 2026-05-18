@@ -162,6 +162,12 @@ def calculate_projections(user_data: dict, user: dict):
         f"{BACKEND_BASE_URL}/projections/",
         json=payload
     )
+
+    # 🚨 ADD THIS TEMPORARY DEBUG BLOCK:
+    if resp.status_code == 500:
+        print("🚨 BACKEND 500 CRASH DETECTED!")
+        print("Response Text:", resp.text)
+        
     resp.raise_for_status()
     return resp.json()
 
