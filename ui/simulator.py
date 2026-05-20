@@ -838,7 +838,7 @@ def run_simulator(is_guest: bool = False):
             # This is critical: st.stop() prevents the rest of the page from rendering!
             st.stop()
         else:
-            if page == "Strategy"
+            if page == "Strategy":
                 if is_mobile:
                     render_investment_plan_mobile(user_data=user_data, user=user)
                 else:
