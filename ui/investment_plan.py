@@ -2100,31 +2100,28 @@ def render_investment_plan_mobile(user_data: dict, user: dict):
     # =========================================================
     # 1. STARTING CORPUS (THE FOUNDATION)
     # =========================================================
+    # =========================================================
+    # 1. STARTING CORPUS (THE FOUNDATION)
+    # =========================================================
     corpus = user_data["initial_corpus"][country] 
     total_corpus = round(sum(corpus.values()), 2)
 
-    # Build the HTML breakdown of individual accounts for the box
+    # Build the HTML breakdown on a SINGLE line so Streamlit doesn't turn it into a code block
     corpus_breakdown_html = ""
     for k, v in corpus.items():
         if v > 0:
             friendly_name = k.replace("_", " ").title()
-            corpus_breakdown_html += f"""
-            <div style='display: flex; justify-content: space-between; font-size: 13px; color: #d4d4d8; margin-top: 6px;'>
-                <span>{friendly_name}</span>
-                <span>{currency}{v:,.0f}</span>
-            </div>
-            """
+            corpus_breakdown_html += f"<div style='display: flex; justify-content: space-between; font-size: 13px; color: #d4d4d8; margin-top: 6px;'><span>{friendly_name}</span><span>{currency}{v:,.0f}</span></div>"
     
-    # Hide the divider line if there are no sub-components
     hr_line = "<hr style='border-color: #3f3f46; margin: 12px 0;'>" if corpus_breakdown_html else ""
 
+    # Keep the HTML tags flush left!
     st.markdown(f"""
-    <div style="background-color: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #6366f1; margin-bottom: 25px;">
-        <p style="margin:0; font-size: 14px; color: #a1a1aa;">Total Starting Corpus</p>
-        <h2 style="margin:0; color: #ffffff;">{currency}{total_corpus:,.0f}</h2>
-        {hr_line}
-        {corpus_breakdown_html}
-    </div>
+<div style="background-color: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #6366f1; margin-bottom: 25px;">
+    <p style="margin:0; font-size: 14px; color: #a1a1aa;">Total Starting Corpus</p>
+    <h2 style="margin:0; color: #ffffff;">{currency}{total_corpus:,.0f}</h2>
+    {hr_line}{corpus_breakdown_html}
+</div>
     """, unsafe_allow_html=True)
 
     if total_corpus == 0:
@@ -2320,8 +2317,8 @@ def render_investment_plan_mobile(user_data: dict, user: dict):
             st.dataframe(
                 df_breakdown.style.format({
                     "Alloc (%)": "{:.1f}%", 
-                    "Amount": f"{currency}{{x:,.0f}}", 
-                    "Est. Yearly Income": f"{currency}{{x:,.0f}}"
+                    "Amount": f"{currency}{{:,.0f}}", 
+                    "Est. Yearly Income": f"{currency}{{:,.0f}}"
                 }), 
                 use_container_width=True,
                 hide_index=True
