@@ -822,7 +822,7 @@ def run_simulator(is_guest: bool = False):
         
         render_expenses(config=config, user_data=user_data, user=user)
 
-    elif page == "Strategy" or page == "Reports":
+    elif page == "Strategy" or page == "Report":
         # 🚨 THE PAYWALL: Block registered free users entirely
         if is_registered_free:
             st.markdown("### 🔒 Premium Feature Locked")
