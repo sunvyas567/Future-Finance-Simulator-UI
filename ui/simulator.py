@@ -461,6 +461,9 @@ def run_simulator(is_guest: bool = False):
     # Simple mobile detection using query params fallback
     is_mobile = st.session_state.get("is_mobile", False)
 
+    # A free user is someone who is logged in (not a guest) but hasn't paid
+    is_registered_free = not user["is_guest"] and not user["is_premium"]
+
     user = get_user_context(is_guest)
 
     # ---------------- Sidebar ----------------
@@ -630,6 +633,9 @@ def run_simulator(is_guest: bool = False):
     # Use very short, punchy names for the mobile tab bar
     pages = ["Home", "Profile", "Expenses", "Strategy", "Report"]
     
+    #is_premium = user.get("is_premium", False) if user else False
+    
+
     if not user["is_guest"] and not user["is_premium"]:
         pages.append("Upgrade")
 
@@ -816,36 +822,50 @@ def run_simulator(is_guest: bool = False):
         
         render_expenses(config=config, user_data=user_data, user=user)
 
-    elif page == "Strategy":
-        
-        if is_mobile:
-            render_investment_plan_mobile(user_data=user_data, user=user)
+    elif page == "Strategy" or page == "Reports":
+        # 🚨 THE PAYWALL: Block registered free users entirely
+        if is_registered_free:
+            st.markdown("### 🔒 Premium Feature Locked")
+            st.info("You have successfully registered! Upgrade to Premium to unlock advanced Investment Strategies, custom allocations, and full 60-year PDF Reports.")
+            
+            with st.container(border=True):
+                st.markdown("<h4 style='text-align: center;'>Unlock Your Future</h4>", unsafe_allow_html=True)
+                if st.button("⭐ Upgrade to Premium Now", type="primary", use_container_width=True):
+                    # Trigger your Razorpay payment modal/flow here
+                    st.write("Redirecting to secure payment...")
+                    render_payments(user["username"])
+            
+            # This is critical: st.stop() prevents the rest of the page from rendering!
+            st.stop()
         else:
-            render_investment_plan(user_data=user_data, user=user)
-
-    elif page == "Report":
-        
-        if not projections or not base_context:
-            st.warning("Please complete inputs to view summary.")
-            return
-        if is_mobile:
-                render_summary_mobile(
-                    projections=projections,
-                    user_data=user_data,
-                    user=user,
-                    base_context=base_context,
-                    life_stage=result["life_stage"],
-                    stage_metrics=result["life_stage_metrics"]
-                )
-        else:
-            render_summary(
-                projections=projections,
-                user_data=user_data,
-                user=user,
-                base_context=base_context,
-                life_stage=result["life_stage"],
-                stage_metrics=result["life_stage_metrics"]
-            )
+            if page == "Strategy"
+                if is_mobile:
+                    render_investment_plan_mobile(user_data=user_data, user=user)
+                else:
+                    render_investment_plan(user_data=user_data, user=user)
+            elif page == "Report":
+                
+                if not projections or not base_context:
+                    st.warning("Please complete inputs to view summary.")
+                    return
+                if is_mobile:
+                        render_summary_mobile(
+                            projections=projections,
+                            user_data=user_data,
+                            user=user,
+                            base_context=base_context,
+                            life_stage=result["life_stage"],
+                            stage_metrics=result["life_stage_metrics"]
+                        )
+                else:
+                    render_summary(
+                        projections=projections,
+                        user_data=user_data,
+                        user=user,
+                        base_context=base_context,
+                        life_stage=result["life_stage"],
+                        stage_metrics=result["life_stage_metrics"]
+                    )
 
     elif page == "Upgrade":
         render_payments(user["username"])

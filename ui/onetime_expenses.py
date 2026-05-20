@@ -205,7 +205,7 @@ def render_onetime_expenses(config, user_data, user):
                 include = st.checkbox(
                     "Include",
                     key=include_key,
-                    disabled=is_guest or not is_premium
+                    disabled=is_guest # or not is_premium
                 )
 
                 value = st.number_input(
@@ -213,7 +213,7 @@ def render_onetime_expenses(config, user_data, user):
                     min_value=0.0,
                     value=stored_value,
                     step=1000.0,
-                    disabled=not include or is_guest or not is_premium,
+                    disabled=not include or is_guest,# or not is_premium,
                     key=value_key
                 )
 
@@ -432,7 +432,7 @@ def render_onetime_expenses_mobile(config, user_data, user):
                     min_value=0.0,
                     value=stored_value,
                     step=10000.0,
-                    disabled=is_guest or not is_premium,
+                    disabled=is_guest,# or not is_premium,
                     key=value_key,
                     label_visibility="collapsed" 
                 )

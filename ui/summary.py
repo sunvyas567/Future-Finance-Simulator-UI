@@ -113,6 +113,8 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
     st.title("📊 Financial Outcome Summary")
 
     is_mobile = st.session_state.get("is_mobile", False)
+    is_guest = st.session_state.get("is_guest",False)
+
     fig_ot = go.Figure()
     fig_rec = go.Figure()
     with section(
@@ -147,7 +149,7 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
     # ======================================================
     # 👤 LIFE STAGE INSIGHTS
     # ======================================================
-    print("Life stage:", life_stage)
+    #print("Life stage:", life_stage)
 
     
     if life_stage and stage_metrics:
@@ -569,50 +571,56 @@ def render_summary(projections, user_data, user, base_context,life_stage=None,st
         #    render_advisor_panel(advice)
         #except:
         #    st.info("Advisor insights unavailable")
+    with section("📄 Report Export", "📥"):
+            
+            # We know they are either Guest or Premium at this point
+            if is_guest:
+                st.info("💡 **Demo Mode:** You are viewing sample data. Download a 2-Year preview report to see how it looks.")
+                btn_text = "📥 Download 2-Year Demo Report"
+                pdf_df = df.head(2) # Cap the dataframe at 2 years
+                
+            else: # Must be Premium
+                st.success("⭐ **Premium Active:** Download your complete, personalized lifecycle report.")
+                btn_text = "📥 Download Full 60-Year Report"
+                pdf_df = df # Pass the full, uncapped dataframe
 
-    with section("📄 Report Export"):
+            # The actual generation logic
+            if st.button(btn_text, use_container_width=True):
+                with st.spinner("Generating your PDF report... Please wait."):
+                    
+                    pdf_bytes = generate_financial_summary_pdf_playwright(
+                        username=user.get("username", "Guest"),
+                        base_context=base_context,
+                        projection_df=pdf_df, # Uses the capped or full DF based on tier
+                        currency=currency,
+                        retirement_score=score,
+                        score_breakdown=breakdown,
+                        advisor_advice=advice,
+                        income_expense_chart_html=income_expense_chart_html,
+                        corpus_chart_html=corpus_chart_html,
+                        tax_chart_html=tax_chart_html,
+                        scenario_comparison_df=cmp_df, 
+                        onetime_chart_html=onetime_chart_html,
+                        recurring_chart_html=recurring_chart_html,
+                        expense_growth_chart_html=expense_growth_chart_html,
+                    )
 
+                    if isinstance(pdf_bytes, bytearray):
+                        pdf_bytes = bytes(pdf_bytes)
 
-        if user.get("is_premium"):
-            if st.button("📥 Download Detailed Financial Report (PDF)"):
-                #pdf_bytes = generate_financial_summary_pdf(
-                #    username=user["username"],
-                #     base_context=base_context,
-                #    projection_df=df,
-                #    currency=currency,
-                #    income_expense_chart_png=income_expense_png,
-                #    corpus_chart_png=corpus_png,
-                #    scenario_comparison_df=cmp_df if not cmp_df.empty else None,
-                #)
+                    st.session_state["generated_pdf"] = pdf_bytes
+                    st.session_state["generated_pdf_name"] = f"{user.get('username', 'Demo')}_summary.pdf"
 
-                pdf_bytes = generate_financial_summary_pdf_playwright(
-                    username=user["username"],
-                    base_context=base_context,
-                    projection_df=df,
-                    currency=currency,
-                    retirement_score=score,
-                    score_breakdown=breakdown,
-                    advisor_advice=advice,
-                    income_expense_chart_html=income_expense_chart_html,
-                    corpus_chart_html=corpus_chart_html,
-                    tax_chart_html=tax_chart_html,
-                    scenario_comparison_df=cmp_df,
-                    onetime_chart_html=onetime_chart_html,
-                    recurring_chart_html=recurring_chart_html,
-                    expense_growth_chart_html=expense_growth_chart_html,
-                )
-
-                if isinstance(pdf_bytes, bytearray):
-                    pdf_bytes = bytes(pdf_bytes)
-
+            # Display the download button if the PDF exists in memory
+            if "generated_pdf" in st.session_state:
                 st.download_button(
-                    "Download Report PDF",
-                    pdf_bytes,
-                    file_name=f"{user['username']}_{scenario_name}_summary.pdf",
+                    label="⬇️ Click here to Download PDF",
+                    data=st.session_state["generated_pdf"],
+                    file_name=st.session_state["generated_pdf_name"],
                     mime="application/pdf",
+                    type="primary",
+                    use_container_width=True
                 )
-        else:
-            st.info("Upgrade to Premium to download PDF reports.")
 
 # -------------------------------------------------
 # MAIN SUMMARY
