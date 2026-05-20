@@ -461,10 +461,10 @@ def run_simulator(is_guest: bool = False):
     # Simple mobile detection using query params fallback
     is_mobile = st.session_state.get("is_mobile", False)
 
+    user = get_user_context(is_guest)
+
     # A free user is someone who is logged in (not a guest) but hasn't paid
     is_registered_free = not user["is_guest"] and not user["is_premium"]
-
-    user = get_user_context(is_guest)
 
     # ---------------- Sidebar ----------------
     if user["is_guest"]:
