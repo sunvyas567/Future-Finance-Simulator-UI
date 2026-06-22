@@ -398,6 +398,8 @@ def render_welcome_page_mobile():
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.success("👉 **Ready?** Tap 'Profile' in the menu above to start.")
+
+
 def render_welcome_page_mobile_old():
         st.title("Plan Your Financial Future With Confidence")
         st.caption("A simple, powerful tool to understand your future income, expenses, and savings.")

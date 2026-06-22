@@ -163,7 +163,7 @@ def render_recurring_expenses(config, user_data, user):
                     min_value=0.0,
                     value=stored_value,
                     step=500.0,
-                    disabled=not include or is_guest,# or not is_premium,
+                    disabled=not include or is_guest or not is_premium,
                     key=value_key,
                 )
 
