@@ -605,7 +605,7 @@ def render_auth():
 #        st.rerun()
 
 
-def render_app():
+def render_app_old():
     # 🔥 DO NOT RETURN EARLY — EVER
     auth_status = st.session_state.get("authentication_status")
 
@@ -643,6 +643,52 @@ def render_app():
 
     run_simulator(is_guest=False)
 
+def render_app():
+    # 🔥 DO NOT RETURN EARLY — EVER
+    auth_status = st.session_state.get("authentication_status")
+
+    if auth_status is None:
+        st.info("Please login to continue.")
+        if st.button("Login"):
+            st.session_state.view = "login"
+            st.rerun()
+        return
+
+    if auth_status is False:
+        st.error("Authentication failed.")
+        return
+
+    # --- MAIN APP LAYOUT ---
+    
+    # Use columns to place the Welcome message and Logout button side-by-side
+    col1, col2 = st.columns([3, 1])
+    
+    username = st.session_state.get("username")
+    
+    with col1:
+        st.success(f"Logged in as {username}")
+
+    authenticator = get_authenticator()
+
+    with col2:
+        # 🟢 CHANGE: location="main" renders the button in the main page body
+        # The key="unique_key" prevents duplicate ID errors if you have other buttons
+        if authenticator.logout("Logout", location="main", key="logout_btn"):
+            
+            # Clear standard auth state
+            st.session_state["authentication_status"] = None
+            st.session_state["username"] = None
+            st.session_state["name"] = None # Good practice to clear name if used
+            
+            # Clear your custom app navigation state
+            st.session_state.view = "landing"
+            
+            # Force a rerun to instantly redirect to the landing page
+            st.rerun()
+
+    # --- YOUR APP LOGIC BELOW ---
+    st.divider() # Visual separation
+    run_simulator(is_guest=False)
 
 # -------------------------------------------------------------------
 # MAIN ROUTER
